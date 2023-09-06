@@ -53,7 +53,7 @@
 User Function ProdSEQ()
 Local cUltimo	:= ""
 Local nTAM_GRU	:= 3
-Local nTAM_COD 	:= 4
+Local nTAM_COD 	:= 6
 
 //-- Declaracao de Variaveis
 SetPrvt("_xGrp,_xRETORNO,_nUP,_cALIAS,_nRECNO,_nORDEM,_n")
