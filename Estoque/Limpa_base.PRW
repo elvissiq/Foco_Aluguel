@@ -35,8 +35,6 @@ Endif
 
 
 If MsgYesNo("Essa rotina irá limpar os movimentos da base de dados SQL"+Chr(13)+"Deseja Continuar ?")
-	//cTipo := "Arquivos de Dados (*.TXT)  |*.TXT | "
-	//cArq :=  cGetFile(cTipo, "Selecione o arquivo") // seleciona o arquivo com as tabelas a serem limpas
 	cArq := TFileDialog( "Arquivo texto (*.txt)",,,, .F., /*GETF_MULTISELECT*/ )
 	aFilesTxt    := Directory(cArq)
 	If Len(aFilesTxt) <= 0
