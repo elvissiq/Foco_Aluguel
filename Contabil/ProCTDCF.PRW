@@ -37,10 +37,10 @@ Local nTotal := 0
 		
 		DBSelectArea("CTD")
 		CTD->(Dbsetorder(1))
-		If ! CTD->(dbSeek(xFilial("CTD")+"C"+SA1->A1_CGC))
+		If ! CTD->(dbSeek(xFilial("CTD")+"C"+Alltrim(SA1->A1_COD)+Alltrim(SA1->A1_LOJA)))
 			If RecLock("CTD", .T.)
 				CTD->CTD_FILIAL := xFilial("CTD")
-				CTD->CTD_ITEM   := "C"+SA1->A1_CGC
+				CTD->CTD_ITEM   := "C"+Alltrim(SA1->A1_COD)+Alltrim(SA1->A1_LOJA)
 				CTD->CTD_DESC01 := SA1->A1_NOME
 				CTD->CTD_CLASSE := "2"
 				CTD->CTD_NORMAL := "1"
@@ -51,6 +51,16 @@ Local nTotal := 0
 				CTD->CTD_ACCLVL := "1"  
 				CTD->CTD_BOOK   := "AUTO"
 				MsUnlock("CTD")
+			EndIf
+			If SA1->(FieldPos('A1_XITEMCC')) > 0
+				RecLock("SA1",.F.)
+					SA1->A1_XITEMCC := CTD->CTD_ITEM
+				SA1->(MSUnlock())
+			Else
+				If lMsgCampo
+					FWAlertWarning("Campo A1_XITEMCC não encontrado no dicionário de dados.","Campo A1_XITEMCC")
+					lMsgCampo := .F.
+				EndIf 
 			EndIf
 		Else
 			If SA1->(FieldPos('A1_XITEMCC')) > 0
@@ -84,10 +94,10 @@ Local nTotal := 0
 		
 		DBSelectArea("CTD")
 		CTD->(dbSetOrder(1))
-		If ! CTD->(dbSeek(xFilial("CTD")+"F"+SA2->A2_CGC))
+		If ! CTD->(dbSeek(xFilial("CTD")+"F"+Alltrim(SA2->A2_COD)+Alltrim(SA2->A2_LOJA)))
 			If RecLock("CTD", .T.)
 				CTD->CTD_FILIAL := xFilial("CTD")
-				CTD->CTD_ITEM   := "F"+SA2->A2_CGC
+				CTD->CTD_ITEM   := "F"+Alltrim(SA2->A2_COD)+Alltrim(SA2->A2_LOJA)
 				CTD->CTD_DESC01 := SA2->A2_NOME
 				CTD->CTD_CLASSE := "2"
 				CTD->CTD_NORMAL := "1"
@@ -98,6 +108,16 @@ Local nTotal := 0
 				CTD->CTD_ACCLVL := "1"  
 				CTD->CTD_BOOK   := "AUTO"
 				MsUnlock("CTD")
+			If SA2->(FieldPos('A2_XITEMCC')) > 0
+				RecLock("SA2",.F.)
+					SA2->A2_XITEMCC := CTD->CTD_ITEM
+				SA2->(MSUnlock())
+			Else
+				If lMsgCampo
+					FWAlertWarning("Campo A2_XITEMCC não encontrado no dicionário de dados.","Campo A2_XITEMCC")
+					lMsgCampo := .F.
+				EndIf 
+			EndIf
 			EndIf
 			If SA2->(FieldPos('A2_XITEMCC')) > 0
 				RecLock("SA2",.F.)

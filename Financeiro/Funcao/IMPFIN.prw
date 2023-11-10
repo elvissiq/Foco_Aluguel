@@ -1,4 +1,6 @@
 #INCLUDE "Totvs.ch"
+#Include "TOPCONN.ch"
+#Include "TBICONN.ch"
 
  /*/{Protheus.doc} F240AFIL
     
@@ -58,13 +60,15 @@ Local nAtual     := 0
 Local nFim       := 0
 Local nPosField1 := 0
 Local nPosField2 := 0
+Local nPosField3 := 0
 Local cArq       := ""
 Local cLinha     := ""
 Local cTipoX3    := ""
 Local cQry       := ""
-Local cErro      := ""
+Local cQryInsert := ""
 Local cLogErro   := ""
 Local __cAlias   := "TMP"+FWTimeStamp(1)
+Local nStatus    := 0
 Local nY, cDado
 
 Private oModel := Nil
@@ -154,7 +158,7 @@ While !FT_FEOF()
           nPosField1 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "CNPJ/CPF"})
           nPosField2 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "CODIGO"})
         
-            If nPosField1 > 0
+            If nPosField1 > 0 .AND. IIF(nPosField1 > 0, !Empty(aRegistro[nPosField1,2]), .F.)
                 SA1->(DBSetOrder(3))//A1_FILIAL+A1_CGC
                 If SA1->(MSseek(FWxFilial("SA1")+aRegistro[nPosField1,2]))
 
@@ -166,7 +170,6 @@ While !FT_FEOF()
                         MSExecAuto({|x,y| FINA040(x,y)}, aRegistro, 3)
                         
                         If lMsErroAuto
-                            DisarmTransaction()
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
                                 aAdd(aErro,aRegistro[nY,2])
@@ -176,8 +179,43 @@ While !FT_FEOF()
                             For nY := 1 To Len(aLogAuto)
                                 cLogErro += aLogAuto[nY]
                             Next nY
-                            aAdd(aErro,cLogErro)
-                            cErro += ArrTokStr(aErro, ";")+Chr(10)
+                            
+                                TCLink()
+                                    cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                                    cQryInsert += " ( XXE_ID,   " 
+                                    cQryInsert += " XXE_ADAPT,  "
+                                    cQryInsert += " XXE_FILE,   " 
+                                    cQryInsert += " XXE_LAYOUT, "
+                                    cQryInsert += " XXE_DESC,   "
+                                    cQryInsert += " XXE_DATE,   "
+                                    cQryInsert += " XXE_TIME,   "
+                                    cQryInsert += " XXE_TYPE,   "
+                                    cQryInsert += " XXE_ERROR,  "
+                                    cQryInsert += " XXE_USRID,  "
+                                    cQryInsert += " XXE_USRNAM, "
+                                    cQryInsert += " XXE_COMPLE, "
+                                    cQryInsert += " XXE_ORIGIN, "
+                                    cQryInsert += " XXE_IDOPER, "
+                                    cQryInsert += " XXE_XML )   "
+                                    cQryInsert += " VALUES (    "
+                                    cQryInsert += " '"+XXEProx()+"',"
+                                    cQryInsert += " '"+FunName()+"',"
+                                    cQryInsert += " '"+cArq+"',"
+                                    cQryInsert += " '"+cTabela+"',"
+                                    cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                                    cQryInsert += " '"+DToS(dDataBase)+"',"
+                                    cQryInsert += " '"+Time()+"',"
+                                    cQryInsert += " '2',"
+                                    cQryInsert += " '"+cLogErro+"',"
+                                    cQryInsert += " '"+__cUserID+"',"
+                                    cQryInsert += " '"+cUserName+"',"
+                                    cQryInsert += " '"+cLogErro+"',"
+                                    cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                                    cQryInsert += " '"+FWTimeStamp(1)+"',"
+                                    cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                                    nStatus := TCSqlExec(cQryInsert)
+                                TCUnlink()
+                                DisarmTransaction()                       
                         EndIf
                     End Transaction
                 Else
@@ -185,11 +223,171 @@ While !FT_FEOF()
                     For nY := 1 To Len(aRegistro)
                         aAdd(aErro,aRegistro[nY,2])
                     Next nY
-                    aAdd(aErro,"")
-                    aAdd(aErro,"")
-                    aAdd(aErro,"Cliente não encontrado.")
-                    cErro += ArrTokStr(aErro, ";")+Chr(10)
+                    
+                    Begin Transaction
+                        TCLink()
+                            cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                            cQryInsert += " ( XXE_ID,   " 
+                            cQryInsert += " XXE_ADAPT,  "
+                            cQryInsert += " XXE_FILE,   " 
+                            cQryInsert += " XXE_LAYOUT, "
+                            cQryInsert += " XXE_DESC,   "
+                            cQryInsert += " XXE_DATE,   "
+                            cQryInsert += " XXE_TIME,   "
+                            cQryInsert += " XXE_TYPE,   "
+                            cQryInsert += " XXE_ERROR,  "
+                            cQryInsert += " XXE_USRID,  "
+                            cQryInsert += " XXE_USRNAM, "
+                            cQryInsert += " XXE_COMPLE, "
+                            cQryInsert += " XXE_ORIGIN, "
+                            cQryInsert += " XXE_IDOPER, "
+                            cQryInsert += " XXE_XML )   "
+                            cQryInsert += " VALUES (    "
+                            cQryInsert += " '"+XXEProx()+"',"
+                            cQryInsert += " '"+FunName()+"',"
+                            cQryInsert += " '"+cArq+"',"
+                            cQryInsert += " '"+cTabela+"',"
+                            cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                            cQryInsert += " '"+DToS(dDataBase)+"',"
+                            cQryInsert += " '"+Time()+"',"
+                            cQryInsert += " '2',"
+                            cQryInsert += " 'Cliente não encontrado.',"
+                            cQryInsert += " '"+__cUserID+"',"
+                            cQryInsert += " '"+cUserName+"',"
+                            cQryInsert += " 'Cliente não encontrado.',"
+                            cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                            cQryInsert += " '"+FWTimeStamp(1)+"',"
+                            cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                            nStatus := TCSqlExec(cQryInsert)
+                        TCUnlink()
+                        DisarmTransaction()
+                    End Transactin
+
                 EndIF 
+            ElseIF nPosField2 > 0 .AND. IIF(nPosField2 > 0, !Empty(aRegistro[nPosField2,2]), .F.)
+                
+                cQry := " SELECT A1_COD, A1_LOJA " 
+                cQry += " FROM "+ RetSqlName("SA1") +" SA1 "
+                cQry += " WHERE SA1.D_E_L_E_T_ <> '*' "
+                cQry += " AND	SA1.A1_COD  = '"+aRegistro[nPosField2,2]+"' " 
+                cQry := ChangeQuery(cQry)
+                IF Select(__cAlias) <> 0
+                    (__cAlias)->(DbCloseArea())
+                EndIf
+                dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),__cAlias,.T.,.T.)
+
+                SA1->(DBSetOrder(1))//A1_FILIAL+A1_COD+A1_LOJA
+                If SA1->(MSseek(FWxFilial("SA1")+(__cAlias)->(A1_COD)+(__cAlias)->(A1_LOJA)))
+              
+                    aAdd(aRegistro,{"E1_CLIENTE",SA1->A1_COD ,Nil})
+                    aAdd(aRegistro,{"E1_LOJA"   ,SA1->A1_LOJA,Nil})
+
+                    Begin Transaction
+                        lMsErroAuto := .F.
+                        MSExecAuto({|x,y| FINA040(x,y)}, aRegistro, 3)
+                        
+                        If lMsErroAuto
+                            aErro := {}
+                            For nY := 1 To Len(aRegistro)
+                                aAdd(aErro,aRegistro[nY,2])
+                            Next nY 
+                            aLogAuto := GetAutoGRLog()
+                            cLogErro := ""
+                            For nY := 1 To Len(aLogAuto)
+                                cLogErro += aLogAuto[nY]
+                            Next nY
+                                                        
+                            Begin Transaction
+                                TCLink()
+                                    cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                                    cQryInsert += " ( XXE_ID,   " 
+                                    cQryInsert += " XXE_ADAPT,  "
+                                    cQryInsert += " XXE_FILE,   " 
+                                    cQryInsert += " XXE_LAYOUT, "
+                                    cQryInsert += " XXE_DESC,   "
+                                    cQryInsert += " XXE_DATE,   "
+                                    cQryInsert += " XXE_TIME,   "
+                                    cQryInsert += " XXE_TYPE,   "
+                                    cQryInsert += " XXE_ERROR,  "
+                                    cQryInsert += " XXE_USRID,  "
+                                    cQryInsert += " XXE_USRNAM, "
+                                    cQryInsert += " XXE_COMPLE, "
+                                    cQryInsert += " XXE_ORIGIN, "
+                                    cQryInsert += " XXE_IDOPER, "
+                                    cQryInsert += " XXE_XML )   "
+                                    cQryInsert += " VALUES (    "
+                                    cQryInsert += " '"+XXEProx()+"',"
+                                    cQryInsert += " '"+FunName()+"',"
+                                    cQryInsert += " '"+cArq+"',"
+                                    cQryInsert += " '"+cTabela+"',"
+                                    cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                                    cQryInsert += " '"+DToS(dDataBase)+"',"
+                                    cQryInsert += " '"+Time()+"',"
+                                    cQryInsert += " '2',"
+                                    cQryInsert += " '"+cLogErro+"',"
+                                    cQryInsert += " '"+__cUserID+"',"
+                                    cQryInsert += " '"+cUserName+"',"
+                                    cQryInsert += " '"+cLogErro+"',"
+                                    cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                                    cQryInsert += " '"+FWTimeStamp(1)+"',"
+                                    cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                                    nStatus := TCSqlExec(cQryInsert)
+                                TCUnlink()
+                                DisarmTransaction()
+                            End Transactin
+                            
+                        EndIf
+                    End Transaction
+                Else 
+                    aErro := {}
+                    For nY := 1 To Len(aRegistro)
+                        aAdd(aErro,aRegistro[nY,2])
+                    Next nY
+                                        
+                    Begin Transaction
+                        TCLink()
+                            cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                            cQryInsert += " ( XXE_ID,   " 
+                            cQryInsert += " XXE_ADAPT,  "
+                            cQryInsert += " XXE_FILE,   " 
+                            cQryInsert += " XXE_LAYOUT, "
+                            cQryInsert += " XXE_DESC,   "
+                            cQryInsert += " XXE_DATE,   "
+                            cQryInsert += " XXE_TIME,   "
+                            cQryInsert += " XXE_TYPE,   "
+                            cQryInsert += " XXE_ERROR,  "
+                            cQryInsert += " XXE_USRID,  "
+                            cQryInsert += " XXE_USRNAM, "
+                            cQryInsert += " XXE_COMPLE, "
+                            cQryInsert += " XXE_ORIGIN, "
+                            cQryInsert += " XXE_IDOPER, "
+                            cQryInsert += " XXE_XML )   "
+                            cQryInsert += " VALUES (    "
+                            cQryInsert += " '"+XXEProx()+"',"
+                            cQryInsert += " '"+FunName()+"',"
+                            cQryInsert += " '"+cArq+"',"
+                            cQryInsert += " '"+cTabela+"',"
+                            cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                            cQryInsert += " '"+DToS(dDataBase)+"',"
+                            cQryInsert += " '"+Time()+"',"
+                            cQryInsert += " '2',"
+                            cQryInsert += " 'Cliente não encontrado.',"
+                            cQryInsert += " '"+__cUserID+"',"
+                            cQryInsert += " '"+cUserName+"',"
+                            cQryInsert += " 'Cliente não encontrado.',"
+                            cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                            cQryInsert += " '"+FWTimeStamp(1)+"',"
+                            cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                            nStatus := TCSqlExec(cQryInsert)
+                        TCUnlink()
+                        DisarmTransaction()
+                    End Transactin
+
+                EndIF
+                
+                IF Select(__cAlias) <> 0
+                    (__cAlias)->(DbCloseArea())
+                EndIf
             EndIf 
         
         Case cTabela == "SE2"
@@ -204,13 +402,37 @@ While !FT_FEOF()
               
                     aAdd(aRegistro,{"E2_FORNECE",SA2->A2_COD ,Nil})
                     aAdd(aRegistro,{"E2_LOJA"   ,SA2->A2_LOJA,Nil})
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_NOMFOR"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_NOMFOR" ,aRegistro[nPosField3,2],Nil})
+                    EndIF
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FORBCO"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FORBCO" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FORAGE"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FORAGE" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FORCTA"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FORCTA" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FCTADV"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FCTADV" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
 
                     Begin Transaction
                         lMsErroAuto := .F.
                         MSExecAuto({|x,y| FINA050(x,y)}, aRegistro, 3)
                         
                         If lMsErroAuto
-                            DisarmTransaction()
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
                                 aAdd(aErro,aRegistro[nY,2])
@@ -220,8 +442,43 @@ While !FT_FEOF()
                             For nY := 1 To Len(aLogAuto)
                                 cLogErro += aLogAuto[nY]
                             Next nY
-                            aAdd(aErro,cLogErro)
-                            cErro += ArrTokStr(aErro, ";")+Chr(10)
+                                                        
+                            TCLink()
+                                cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                                cQryInsert += " ( XXE_ID,   " 
+                                cQryInsert += " XXE_ADAPT,  "
+                                cQryInsert += " XXE_FILE,   " 
+                                cQryInsert += " XXE_LAYOUT, "
+                                cQryInsert += " XXE_DESC,   "
+                                cQryInsert += " XXE_DATE,   "
+                                cQryInsert += " XXE_TIME,   "
+                                cQryInsert += " XXE_TYPE,   "
+                                cQryInsert += " XXE_ERROR,  "
+                                cQryInsert += " XXE_USRID,  "
+                                cQryInsert += " XXE_USRNAM, "
+                                cQryInsert += " XXE_COMPLE, "
+                                cQryInsert += " XXE_ORIGIN, "
+                                cQryInsert += " XXE_IDOPER, "
+                                cQryInsert += " XXE_XML )   "
+                                cQryInsert += " VALUES (    "
+                                cQryInsert += " '"+XXEProx()+"',"
+                                cQryInsert += " '"+FunName()+"',"
+                                cQryInsert += " '"+cArq+"',"
+                                cQryInsert += " '"+cTabela+"',"
+                                cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                                cQryInsert += " '"+DToS(dDataBase)+"',"
+                                cQryInsert += " '"+Time()+"',"
+                                cQryInsert += " '2',"
+                                cQryInsert += " '"+cLogErro+"',"
+                                cQryInsert += " '"+__cUserID+"',"
+                                cQryInsert += " '"+cUserName+"',"
+                                cQryInsert += " '"+cLogErro+"',"
+                                cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                                cQryInsert += " '"+FWTimeStamp(1)+"',"
+                                cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                                nStatus := TCSqlExec(cQryInsert)
+                            TCUnlink()
+                            DisarmTransaction()
                         EndIf
                     End Transaction
                 Else
@@ -229,10 +486,46 @@ While !FT_FEOF()
                     For nY := 1 To Len(aRegistro)
                         aAdd(aErro,aRegistro[nY,2])
                     Next nY
-                    aAdd(aErro,"")
-                    aAdd(aErro,"")
-                    aAdd(aErro,"Fornecedor não encontrado.")
-                    cErro += ArrTokStr(aErro, ";")+Chr(10)
+                                        
+                    Begin Transaction
+                        TCLink()
+                            cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                            cQryInsert += " ( XXE_ID,   " 
+                            cQryInsert += " XXE_ADAPT,  "
+                            cQryInsert += " XXE_FILE,   " 
+                            cQryInsert += " XXE_LAYOUT, "
+                            cQryInsert += " XXE_DESC,   "
+                            cQryInsert += " XXE_DATE,   "
+                            cQryInsert += " XXE_TIME,   "
+                            cQryInsert += " XXE_TYPE,   "
+                            cQryInsert += " XXE_ERROR,  "
+                            cQryInsert += " XXE_USRID,  "
+                            cQryInsert += " XXE_USRNAM, "
+                            cQryInsert += " XXE_COMPLE, "
+                            cQryInsert += " XXE_ORIGIN, "
+                            cQryInsert += " XXE_IDOPER, "
+                            cQryInsert += " XXE_XML )   "
+                            cQryInsert += " VALUES (    "
+                            cQryInsert += " '"+XXEProx()+"',"
+                            cQryInsert += " '"+cArq+"',"
+                            cQryInsert += " '"+cTabela+"',"
+                            cQryInsert += " '"+FunName()+"',"
+                            cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                            cQryInsert += " '"+DToS(dDataBase)+"',"
+                            cQryInsert += " '"+Time()+"',"
+                            cQryInsert += " '2',"
+                            cQryInsert += " 'Fornecedor não encontrado.',"
+                            cQryInsert += " '"+__cUserID+"',"
+                            cQryInsert += " '"+cUserName+"',"
+                            cQryInsert += " 'Fornecedor não encontrado.',"
+                            cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                            cQryInsert += " '"+FWTimeStamp(1)+"',"
+                            cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                            nStatus := TCSqlExec(cQryInsert)
+                        TCUnlink()
+                        DisarmTransaction()
+                    End Transactin
+
                 EndIF
             ElseIF nPosField2 > 0 .AND. SA2->(FieldPos("A2_XCOD")) > 0 .AND. IIF(nPosField2 > 0, !Empty(aRegistro[nPosField2,2]), .F.)
                 
@@ -251,13 +544,36 @@ While !FT_FEOF()
               
                     aAdd(aRegistro,{"E2_FORNECE",SA2->A2_COD ,Nil})
                     aAdd(aRegistro,{"E2_LOJA"   ,SA2->A2_LOJA,Nil})
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_NOMFOR"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_NOMFOR" ,aRegistro[nPosField3,2],Nil})
+                    EndIF
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FORBCO"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FORBCO" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FORAGE"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FORAGE" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FORCTA"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FORCTA" ,aRegistro[nPosField3,2],Nil})
+                    EndIF 
+                    
+                    nPosField3 := aScan(aRegistro, {|x| AllTrim(Upper(x[1])) == "E2_FCTADV"})
+                    If nPosField3 > 0
+                        aAdd(aRegistro,{"E2_FCTADV" ,aRegistro[nPosField3,2],Nil})
+                    EndIF
 
                     Begin Transaction
                         lMsErroAuto := .F.
                         MSExecAuto({|x,y| FINA050(x,y)}, aRegistro, 3)
                         
                         If lMsErroAuto
-                            DisarmTransaction()
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
                                 aAdd(aErro,aRegistro[nY,2])
@@ -267,8 +583,43 @@ While !FT_FEOF()
                             For nY := 1 To Len(aLogAuto)
                                 cLogErro += aLogAuto[nY]
                             Next nY
-                            aAdd(aErro,cLogErro)
-                            cErro += ArrTokStr(aErro, ";")+Chr(10)
+                            
+                            TCLink()
+                                cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                                cQryInsert += " ( XXE_ID,   " 
+                                cQryInsert += " XXE_ADAPT,  "
+                                cQryInsert += " XXE_FILE,   " 
+                                cQryInsert += " XXE_LAYOUT, "
+                                cQryInsert += " XXE_DESC,   "
+                                cQryInsert += " XXE_DATE,   "
+                                cQryInsert += " XXE_TIME,   "
+                                cQryInsert += " XXE_TYPE,   "
+                                cQryInsert += " XXE_ERROR,  "
+                                cQryInsert += " XXE_USRID,  "
+                                cQryInsert += " XXE_USRNAM, "
+                                cQryInsert += " XXE_COMPLE, "
+                                cQryInsert += " XXE_ORIGIN, "
+                                cQryInsert += " XXE_IDOPER, "
+                                cQryInsert += " XXE_XML )   "
+                                cQryInsert += " VALUES (    "
+                                cQryInsert += " '"+XXEProx()+"',"
+                                cQryInsert += " '"+FunName()+"',"
+                                cQryInsert += " '"+cArq+"',"
+                                cQryInsert += " '"+cTabela+"',"
+                                cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                                cQryInsert += " '"+DToS(dDataBase)+"',"
+                                cQryInsert += " '"+Time()+"',"
+                                cQryInsert += " '2',"
+                                cQryInsert += " '"+cLogErro+"',"
+                                cQryInsert += " '"+__cUserID+"',"
+                                cQryInsert += " '"+cUserName+"',"
+                                cQryInsert += " '"+cLogErro+"',"
+                                cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                                cQryInsert += " '"+FWTimeStamp(1)+"',"
+                                cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                                nStatus := TCSqlExec(cQryInsert)
+                            TCUnlink()
+                            DisarmTransaction()
                         EndIf
                     End Transaction
                 Else 
@@ -276,10 +627,46 @@ While !FT_FEOF()
                     For nY := 1 To Len(aRegistro)
                         aAdd(aErro,aRegistro[nY,2])
                     Next nY
-                    aAdd(aErro,"")
-                    aAdd(aErro,"")
-                    aAdd(aErro,"Fornecedor não encontrado.")
-                    cErro += ArrTokStr(aErro, ";")+Chr(10)
+                    
+                    Begin Transaction
+                        TCLink()
+                            cQryInsert := " INSERT INTO " + RetSqlName("XXE") 
+                            cQryInsert += " ( XXE_ID,   " 
+                            cQryInsert += " XXE_ADAPT,  "
+                            cQryInsert += " XXE_FILE,   " 
+                            cQryInsert += " XXE_LAYOUT, "
+                            cQryInsert += " XXE_DESC,   "
+                            cQryInsert += " XXE_DATE,   "
+                            cQryInsert += " XXE_TIME,   "
+                            cQryInsert += " XXE_TYPE,   "
+                            cQryInsert += " XXE_ERROR,  "
+                            cQryInsert += " XXE_USRID,  "
+                            cQryInsert += " XXE_USRNAM, "
+                            cQryInsert += " XXE_COMPLE, "
+                            cQryInsert += " XXE_ORIGIN, "
+                            cQryInsert += " XXE_IDOPER, "
+                            cQryInsert += " XXE_XML )   "
+                            cQryInsert += " VALUES (    "
+                            cQryInsert += " '"+XXEProx()+"',"
+                            cQryInsert += " '"+FunName()+"',"
+                            cQryInsert += " '"+cArq+"',"
+                            cQryInsert += " '"+cTabela+"',"
+                            cQryInsert += " '"+FWX2Nome(cTabela)+"',"
+                            cQryInsert += " '"+DToS(dDataBase)+"',"
+                            cQryInsert += " '"+Time()+"',"
+                            cQryInsert += " '2',"
+                            cQryInsert += " 'Fornecedor não encontrado.',"
+                            cQryInsert += " '"+__cUserID+"',"
+                            cQryInsert += " '"+cUserName+"',"
+                            cQryInsert += " 'Fornecedor não encontrado.',"
+                            cQryInsert += " '"+cValToChar(nAtual)+"-"+cValToChar(nFim)+"',"
+                            cQryInsert += " '"+FWTimeStamp(1)+"',"
+                            cQryInsert += " '"+ArrTokStr(aErro, ";")+"')"
+                            nStatus := TCSqlExec(cQryInsert)
+                        TCUnlink()
+                        DisarmTransaction()
+                    End Transactin
+
                 EndIF
                 
                 IF Select(__cAlias) <> 0
@@ -295,9 +682,41 @@ FT_FSKIP()
 EndDo
 
 FT_FUSE()
-
-If !Empty(cErro)
-  MemoWrite("C:\temp\LogErroImp"+cTabela+"_"+FWTimeStamp(1)+".txt", cErro)
-EndIF
-
 Return
+
+//====================================================================================================================\
+/*/{Protheus.doc}XXEProx
+  ====================================================================================================================
+	@description
+	Retorna o próximo número para a tabela XXE
+/*/
+//===================================================================================================================\
+Static Function XXEProx()
+
+	Local cRet := StrZero(0,10)
+	Local cQry := ''
+	Local cAli := GetNextAlias()
+
+	cQry+= " SELECT MAX(XXE_ID) XXE_ID "
+	cQry+= " FROM " + RetSqlTab('XXE')
+	cQry+= " WHERE " + RetSqlCond('XXE')
+
+	cQry:= ChangeQuery(cQry)
+
+	If Select(cAli) <> 0
+		(cAli)->(DbCloseArea())
+	EndIf
+
+	dbUseArea(.T.,'TOPCONN', TCGenQry(,,cQry),cAli, .F., .T.)
+
+	If (cAli)->(!Eof())
+		cRet:= (cAli)->XXE_ID
+	EndIf
+
+	If Select(cAli) <> 0
+		(cAli)->(DbCloseArea())
+	EndIf
+
+	cRet:= Soma1(cRet)
+
+Return ( cRet )
