@@ -495,6 +495,9 @@ Static Function fnR01Grv(oJson, cJson, cMensag)
 
      dbSelectArea("SF1")
      SF1->(dbSetOrder(1))
+     
+     dbSelectArea("SE1")
+     SE1->(dbSetOrder(1))
 
      dbSelectArea("SE2")
      SE2->(dbSetOrder(6))
@@ -1153,6 +1156,14 @@ Static Function fnR01Grv(oJson, cJson, cMensag)
                             EndIf
                     EndIf
                  EndIf
+
+            // -- Títulos a Receber
+           // ----------------------
+            Case cIDRot == "FINA040"
+                 cTpRotina := "RECEBER"
+                 cDcRotina := ""   
+
+                 MsExecAuto({|x,y| FINA040(x,y)}, aCab, nOpcao)   
          EndCase
 
          If cIDRot == "MATA103" .and. (! Empty(cLog) .or. lMsErroAuto)
