@@ -172,7 +172,7 @@ While !FT_FEOF()
                         If lMsErroAuto
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
-                                aAdd(aErro,aRegistro[nY,2])
+                                aAdd(aErro,Alltrim(aRegistro[nY,2]))
                             Next nY
                             aLogAuto := GetAutoGRLog()
                             cLogErro := ""
@@ -221,7 +221,7 @@ While !FT_FEOF()
                 Else
                     aErro := {}
                     For nY := 1 To Len(aRegistro)
-                        aAdd(aErro,aRegistro[nY,2])
+                        aAdd(aErro,Alltrim(aRegistro[nY,2]))
                     Next nY
                     
                     Begin Transaction
@@ -289,7 +289,7 @@ While !FT_FEOF()
                         If lMsErroAuto
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
-                                aAdd(aErro,aRegistro[nY,2])
+                                aAdd(aErro,Alltrim(aRegistro[nY,2]))
                             Next nY 
                             aLogAuto := GetAutoGRLog()
                             cLogErro := ""
@@ -341,7 +341,7 @@ While !FT_FEOF()
                 Else 
                     aErro := {}
                     For nY := 1 To Len(aRegistro)
-                        aAdd(aErro,aRegistro[nY,2])
+                        aAdd(aErro,Alltrim(aRegistro[nY,2]))
                     Next nY
                                         
                     Begin Transaction
@@ -435,7 +435,7 @@ While !FT_FEOF()
                         If lMsErroAuto
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
-                                aAdd(aErro,aRegistro[nY,2])
+                                aAdd(aErro,Alltrim(aRegistro[nY,2]))
                             Next nY
                             aLogAuto := GetAutoGRLog()
                             cLogErro := ""
@@ -484,7 +484,7 @@ While !FT_FEOF()
                 Else
                     aErro := {}
                     For nY := 1 To Len(aRegistro)
-                        aAdd(aErro,aRegistro[nY,2])
+                        aAdd(aErro,Alltrim(aRegistro[nY,2]))
                     Next nY
                                         
                     Begin Transaction
@@ -576,7 +576,7 @@ While !FT_FEOF()
                         If lMsErroAuto
                             aErro := {}
                             For nY := 1 To Len(aRegistro)
-                                aAdd(aErro,aRegistro[nY,2])
+                                aAdd(aErro,Alltrim(aRegistro[nY,2]))
                             Next nY 
                             aLogAuto := GetAutoGRLog()
                             cLogErro := ""
@@ -625,7 +625,7 @@ While !FT_FEOF()
                 Else 
                     aErro := {}
                     For nY := 1 To Len(aRegistro)
-                        aAdd(aErro,aRegistro[nY,2])
+                        aAdd(aErro,Alltrim(aRegistro[nY,2]))
                     Next nY
                     
                     Begin Transaction

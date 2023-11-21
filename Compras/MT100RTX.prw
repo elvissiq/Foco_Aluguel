@@ -7,13 +7,13 @@
 @type function
 @version 
 @author TOTVS Nordeste
-@since 06/11/2023
+@since 21/11/2023
 @return
 /*/
 
 User Function MT100RTX()
     Local oExcel
-    Local aColst  := PARAMIXB[2]
+    Local aColst  := {}
     Local aRet    := {} 
     Local nValor  := 0
     Local nPercen := 0
@@ -33,6 +33,10 @@ User Function MT100RTX()
         nValor += aColSD1[nY,8] //Valor total do Item
     Next
 
+    For nY := 1 To Len(PARAMIXB[2,1])
+        aAdd(aColst,PARAMIXB[2,1,nY])
+    Next 
+
         For nContP := 1 To oExcel:LenPlanAt()	        //Ler as Planilhas
             oExcel:SetPlanAt(nContP)		            //Informa qual a planilha atual
             ConOut("Planilha:"+oExcel:GetPlanAt("2"))	//Nome da Planilha
@@ -50,7 +54,7 @@ User Function MT100RTX()
 
                         aAdd(aRet,aClone(aColst))
 
-                        aRet[(nContL-1),nPosIt]  := StrZero(nContL,2)
+                        aRet[(nContL-1),nPosIt]  := StrZero(nContL-1,2)
                         aRet[(nContL-1),nPosPer] := nPercen
                         aRet[(nContL-1),nPosCC]  := Alltrim(oExcel:GetValue(nContL,6))
                         aRet[(nContL-1),nPosCon] := Alltrim(oExcel:GetValue(nContL,1))
