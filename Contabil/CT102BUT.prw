@@ -93,6 +93,7 @@ User Function JOBMAR01(_cEmp)
 	Local cMV_NUMLIN  := GetMv("MV_NUMLIN")
 	Local cTexto	  := ""
 	Local cLote       := ""
+	Local dDataLanc   := STOD("")
 	Local cLinha      := "000"
 	Local nY 
 
@@ -148,6 +149,7 @@ User Function JOBMAR01(_cEmp)
 		ProcessMessages()
 			
 			cLote  := aReg[nY,3]
+			dDataLanc := CToD(aReg[nY,5])
 			cLinha := Soma1(cLinha)
 
 			aCab := ({{'DDATALANC'  , CToD(aReg[nY,5])  ,NIL},;
@@ -174,8 +176,8 @@ User Function JOBMAR01(_cEmp)
 						{'CT2_HP'     , aReg[nY,15]   						               , NIL},;
 						{'CT2_HIST'   , aReg[nY,16] 						               , NIL}})
 
-				IF (nY+1) <= Len(aReg)
-					If cLote != aReg[(nY+1),3]
+				IF (nY+1) < Len(aReg)
+					If cLote != aReg[(nY+1),3] .OR. dDataLanc != CTOD(aReg[(nY+1),5])
 
 						lMsErroAuto := .F. 
 						MSExecAuto({|x, y,z| CTBA102(x,y,z)}, aCab ,aItens, 3)

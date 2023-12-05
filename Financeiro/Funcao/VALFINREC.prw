@@ -4,12 +4,12 @@
 @type function
 @version 
 @author TOTVS Nordeste
-@since 27/11/2023
+@since 29/11/2023
 @return
 /*/
 
 User Function VALFINREC()
-    Local aTab := {"SE1 - Contas a Receber","SE2 - Contas a Pagar"}
+    Local aTab := {"SE1 - Contas a Receber","SE2 - Contas a Pagar","SA1 - Clientes"}
     Local oDialog, oPanel, oTSay, oCombo, oDlg
 
     Private cTabela := ""
@@ -36,8 +36,9 @@ User Function VALFINREC()
 
         oTSay  := TSay():New(50,5, {|| "Observações da Rotina: "},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
         oTSay  := TSay():New(58,5, {|| "Está rotina irá utilizar como chave o indice abaixo: "},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
-        oTSay  := TSay():New(70,20,{|| 'Filial + Prefixo + Número do Título + Parcela + Tipo'},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
-        oTSay  := TSay():New(80,5, {|| 'Os campos sitados acima devem constar no arquivo para que seja possível o posicionamento no registro.'},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
+        oTSay  := TSay():New(70,20,{|| '1 - Títulos a Receber e Pagar (Filial + Prefixo + Número do Título + Parcela + Tipo)'},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
+        oTSay  := TSay():New(78,20,{|| '2 - Clientes (Filial + Código + Loja)'},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
+        oTSay  := TSay():New(90,5, {|| 'Os campos sitados acima devem constar no arquivo para que seja possível o posicionamento no registro.'},oPanel,,,,,,.T.,,,200,50,,,,,,.T.)
 
     oDialog:Activate()
 
@@ -77,20 +78,35 @@ Static Function xProcessa()
                 If aTamCol[1] > 0
 
                     &(cTabela)->(DBGoTop())
-                    IF &(cTabela)->(MsSeek(Pad(oExcel:GetValue(nContL,1),TamSX3(SubSTR(cTabela,2)+"_FILIAL")[1])+;
-                                    Pad(oExcel:GetValue(nContL,2),TamSX3(SubSTR(cTabela,2)+"_PREFIXO")[1])+;
-                                    Pad(oExcel:GetValue(nContL,3),TamSX3(SubSTR(cTabela,2)+"_NUM")[1])+;
-                                    Pad(oExcel:GetValue(nContL,4),TamSX3(SubSTR(cTabela,2)+"_PARCELA")[1])+;
-                                    Pad(oExcel:GetValue(nContL,5),TamSX3(SubSTR(cTabela,2)+"_TIPO")[1])))
+                    If cTabela $('SA1')
+                        IF &(cTabela)->(MsSeek(Pad(oExcel:GetValue(nContL,1),TamSX3(SubSTR(cTabela,2)+"_FILIAL")[1])+;
+                                        Pad(oExcel:GetValue(nContL,2),TamSX3(SubSTR(cTabela,2)+"_COD")[1])+;
+                                        Pad(oExcel:GetValue(nContL,3),TamSX3(SubSTR(cTabela,2)+"_LOJA")[1])))
+                            
+                            RecLock(cTabela,.F.)
+                                &(cTabela)->(&(cCampo)) := Alltrim(oExcel:GetValue(nContL,4))
+                            &(cTabela)->(MsUnLock())
                         
-                        RecLock(cTabela,.F.)
-                            &(cTabela)->(&(cCampo))  := Alltrim(oExcel:GetValue(nContL,6))
-                        &(cTabela)->(MsUnLock())
+                        Else 
+                            FWAlertError("Linha "+cValToChar(nContL),"Não Posicionou!")
+                        EndIF
+
+                    ElseIf cTabela $('SE1/SE2')
+                        IF &(cTabela)->(MsSeek(Pad(oExcel:GetValue(nContL,1),TamSX3(SubSTR(cTabela,2)+"_FILIAL")[1])+;
+                                        Pad(oExcel:GetValue(nContL,2),TamSX3(SubSTR(cTabela,2)+"_PREFIXO")[1])+;
+                                        Pad(oExcel:GetValue(nContL,3),TamSX3(SubSTR(cTabela,2)+"_NUM")[1])+;
+                                        Pad(oExcel:GetValue(nContL,4),TamSX3(SubSTR(cTabela,2)+"_PARCELA")[1])+;
+                                        Pad(oExcel:GetValue(nContL,5),TamSX3(SubSTR(cTabela,2)+"_TIPO")[1])))
+                            
+                            RecLock(cTabela,.F.)
+                                &(cTabela)->(&(cCampo))  := Alltrim(oExcel:GetValue(nContL,6))
+                            &(cTabela)->(MsUnLock())
                         
-                    Else 
-                        FWAlertError("Linha "+cValToChar(nContL),"Não Posicionou!")
-                    EndIF
-                    
+                        Else 
+                            FWAlertError("Linha "+cValToChar(nContL),"Não Posicionou!")
+                        EndIF
+                    EndIF 
+
                 EndIf
             
             Next
