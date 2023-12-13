@@ -47,18 +47,18 @@ User Function MT100RTX()
                     If aTamCol[1] > 0                   //Se a linha tem algum valor
                         
                         If !Empty(oExcel:GetValue(nContL,3))
-                            nPercen := oExcel:GetValue(nContL,3)
+                            nPercen := IIF(ValType(oExcel:GetValue(nContL,3)) != "N",Val(StrTran(oExcel:GetValue(nContL,3),",",".")),oExcel:GetValue(nContL,3))
                         Else
-                            nPercen := (( oExcel:GetValue(nContL,4) / nValor ) * 100)
+                            nPercen := (( IIF(ValType(oExcel:GetValue(nContL,4)) != "N",Val(StrTran(oExcel:GetValue(nContL,4),",",".")),oExcel:GetValue(nContL,4)) / nValor ) * 100)
                         EndIf  
 
                         aAdd(aRet,aClone(aColst))
 
                         aRet[(nContL-1),nPosIt]  := StrZero(nContL-1,2)
                         aRet[(nContL-1),nPosPer] := nPercen
-                        aRet[(nContL-1),nPosCC]  := Alltrim(oExcel:GetValue(nContL,6))
-                        aRet[(nContL-1),nPosCon] := Alltrim(oExcel:GetValue(nContL,1))
-                        aRet[(nContL-1),nPosItc] := Alltrim(oExcel:GetValue(nContL,8))
+                        aRet[(nContL-1),nPosCC]  := Alltrim(IIF(ValType(oExcel:GetValue(nContL,6) == "C", oExcel:GetValue(nContL,6), AsString(oExcel:GetValue(nContL,6)))))
+                        aRet[(nContL-1),nPosCon] := Alltrim(IIF(ValType(oExcel:GetValue(nContL,1) == "C", oExcel:GetValue(nContL,1), AsString(oExcel:GetValue(nContL,1)))))
+                        aRet[(nContL-1),nPosItc] := Alltrim(IIF(ValType(oExcel:GetValue(nContL,8) == "C", oExcel:GetValue(nContL,8), AsString(oExcel:GetValue(nContL,8)))))
 
                     EndIf
                 EndIf
