@@ -28,7 +28,7 @@ User Function NATSEZLOAD()
         ConOut("Planilha:"+oExcel:GetPlanAt("2"))	//Nome da Planilha
         aTamLin	:= oExcel:LinTam() 		            //Linha inicio e fim da linha
         For nContL := aTamLin[1] To aTamLin[2]
-            If nContL > 1
+            If nContL > 1 .AND. ( (ValType(oExcel:GetValue(nContL,3)) != "U") .OR. (ValType(oExcel:GetValue(nContL,2)) != "U") )
                 aTamCol	:= oExcel:ColTam(nContL)    //Coluna inicio e fim
                 If aTamCol[1] > 0                   //Se a linha tem algum valor
 
