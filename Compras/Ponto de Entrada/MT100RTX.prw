@@ -7,7 +7,7 @@
 @type function
 @version 
 @author TOTVS Nordeste
-@since 21/11/2023
+@since 02/01/2024
 @return
 /*/
 
@@ -42,7 +42,7 @@ User Function MT100RTX()
             ConOut("Planilha:"+oExcel:GetPlanAt("2"))	//Nome da Planilha
             aTamLin	:= oExcel:LinTam() 		            //Linha inicio e fim da linha
             For nContL := aTamLin[1] To aTamLin[2]
-                If nContL > 1
+                If nContL > 1 .AND. ( ValType(oExcel:GetValue(nContL,3)) != "U" .OR. ValType(oExcel:GetValue(nContL,4)) != "U" )
                     aTamCol	:= oExcel:ColTam(nContL)    //Coluna inicio e fim
                     If aTamCol[1] > 0                   //Se a linha tem algum valor
                         
@@ -56,9 +56,9 @@ User Function MT100RTX()
 
                         aRet[(nContL-1),nPosIt]  := StrZero(nContL-1,2)
                         aRet[(nContL-1),nPosPer] := nPercen
-                        aRet[(nContL-1),nPosCC]  := Alltrim(IIF(ValType(oExcel:GetValue(nContL,6) == "C", oExcel:GetValue(nContL,6), AsString(oExcel:GetValue(nContL,6)))))
-                        aRet[(nContL-1),nPosCon] := Alltrim(IIF(ValType(oExcel:GetValue(nContL,1) == "C", oExcel:GetValue(nContL,1), AsString(oExcel:GetValue(nContL,1)))))
-                        aRet[(nContL-1),nPosItc] := Alltrim(IIF(ValType(oExcel:GetValue(nContL,8) == "C", oExcel:GetValue(nContL,8), AsString(oExcel:GetValue(nContL,8)))))
+                        aRet[(nContL-1),nPosCC]  := Alltrim(IIF(ValType(oExcel:GetValue(nContL,6)) == "C", oExcel:GetValue(nContL,6), AsString(oExcel:GetValue(nContL,6))))
+                        aRet[(nContL-1),nPosCon] := Alltrim(IIF(ValType(oExcel:GetValue(nContL,1)) == "C", oExcel:GetValue(nContL,1), AsString(oExcel:GetValue(nContL,1))))
+                        aRet[(nContL-1),nPosItc] := Alltrim(IIF(ValType(oExcel:GetValue(nContL,8)) == "C", oExcel:GetValue(nContL,8), AsString(oExcel:GetValue(nContL,8))))
 
                     EndIf
                 EndIf
