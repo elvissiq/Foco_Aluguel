@@ -8,7 +8,7 @@
 
 @type function
 @author Elvis Siqueira
-@since 31/10/2023
+@since 26/01/2024
 /*/
 
 User Function NATSEZLOAD()
@@ -17,6 +17,7 @@ User Function NATSEZLOAD()
     Local aRet := {}
     Local aTamLin := {}
     Local nPercen := 0
+    Local nTotVal := 0
     Local nContP,nContL
     Local cArq 
 
@@ -28,7 +29,7 @@ User Function NATSEZLOAD()
         ConOut("Planilha:"+oExcel:GetPlanAt("2"))	//Nome da Planilha
         aTamLin	:= oExcel:LinTam() 		            //Linha inicio e fim da linha
         For nContL := aTamLin[1] To aTamLin[2]
-            If nContL > 1 .AND. ( (ValType(oExcel:GetValue(nContL,3)) != "U") .OR. (ValType(oExcel:GetValue(nContL,2)) != "U") )
+            If nContL > 1 .AND. ( ValType(oExcel:GetValue(nContL,2)) != "U" .OR. ValType(oExcel:GetValue(nContL,3)) != "U" )
                 aTamCol	:= oExcel:ColTam(nContL)    //Coluna inicio e fim
                 If aTamCol[1] > 0                   //Se a linha tem algum valor
 
@@ -46,11 +47,19 @@ User Function NATSEZLOAD()
                                 Alltrim(oExcel:GetValue(nContL,6)),;      //Classe Valor
                                 "SZE",;                                   //Alias WT
                                 0,;                                       //Recno WT
-                                .F.})                                      
-                        
+                                .F.})
+                                                          
+                    nTotVal += oExcel:GetValue(nContL,2)    
                 EndIf
             EndIf
         Next
+
+        If nValor < nTotVal
+           aRet[Len(aRet)][02] := aRet[Len(aRet)][02] - (nTotVal - nValor)
+        elseIf nValor > nTotVal
+            aRet[Len(aRet)][02] := aRet[Len(aRet)][02] - (nValor - nTotVal)
+        EndIf   
+
     Next
 
     oExcel:Close()
