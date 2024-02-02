@@ -49,7 +49,8 @@ Static Function sfSetCTD(mvModel)
 			liRec	:=	RecLock("CTD",.T.)
 			CTD->CTD_FILIAL := xFilial("CTD") 
 			CTD->CTD_ITEM	:= "C"+oModelSA1:GetValue('A1_COD')+oModelSA1:GetValue('A1_LOJA')
-			CTD->CTD_CLASSE := "2"          
+			CTD->CTD_CLASSE := "2"
+			CTD->CTD_NORMAL := "2"          
 			CTD->CTD_DESC01 := oModelSA1:GetValue('A1_NOME')
 			CTD->CTD_BLOQ	:= "2"    
 			CTD->CTD_DTEXIS := CTOD("01/01/1980")
