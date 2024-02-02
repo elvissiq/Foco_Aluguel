@@ -178,7 +178,7 @@ User Function JOBMAR01(_cEmp)
 
 				IF (nY+1) < Len(aReg)
 					If cLote != aReg[(nY+1),3] .OR. dDataLanc != CTOD(aReg[(nY+1),5])
-
+						
 						lMsErroAuto := .F. 
 						MSExecAuto({|x, y,z| CTBA102(x,y,z)}, aCab ,aItens, 3)
 
