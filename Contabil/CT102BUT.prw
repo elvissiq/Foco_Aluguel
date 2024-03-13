@@ -176,7 +176,7 @@ User Function JOBMAR01(_cEmp)
 						{'CT2_HP'     , aReg[nY,15]   						               , NIL},;
 						{'CT2_HIST'   , aReg[nY,16] 						               , NIL}})
 
-				IF (nY+1) < Len(aReg)
+				IF (nY+1) <= Len(aReg)
 					If cLote != aReg[(nY+1),3] .OR. dDataLanc != CTOD(aReg[(nY+1),5])
 						
 						lMsErroAuto := .F. 
