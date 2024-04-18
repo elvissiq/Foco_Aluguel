@@ -1,0 +1,415 @@
+//Bibliotecas
+#Include 'Protheus.ch'
+#Include 'FWMVCDef.ch'
+#Include "TBICONN.CH"
+#Include "TopConn.ch"
+
+#Define ENTER Chr(13)
+
+//----------------------------------------------------------------------
+/*/{PROTHEUS.DOC} FFINR001
+FUNÇÃO FFINR001 - Resumo de Fluxo de Caixa FOCO
+@OWNER Foco Aluguel
+@VERSION PROTHEUS 12
+@SINCE 18/04/2024
+/*/
+//----------------------------------------------------------------------
+
+User Function FFINR001()
+    Local aArea := FWGetArea()
+    Local aButtons := {;
+                        {.F.,Nil},;         // Copiar
+                        {.F.,Nil},;         // Recortar
+                        {.F.,Nil},;         // Colar
+                        {.F.,Nil},;         // Calculadora
+                        {.F.,Nil},;         // Spool
+                        {.F.,Nil},;         // Imprimir
+                        {.F.,Nil},;         // Confirmar
+                        {.T.,"Fechar"},;    // Cancelar
+                        {.F.,Nil},;         // WalkTrhough
+                        {.F.,Nil},;         // Ambiente
+                        {.F.,Nil},;         // Mashup
+                        {.F.,Nil},;         // Help
+                        {.F.,Nil},;         // Formulário HTML
+                        {.F.,Nil};          // ECM
+                    }
+
+    Private oTabTMP1 := FWTemporaryTable():New("TMP1")
+    Private oTabTMP2 := FWTemporaryTable():New("TMP2")
+    Private oTabTMP3 := FWTemporaryTable():New("TMP3")
+    Private aFields1 := {}
+    Private aFields2 := {}
+    Private aFields3 := {}
+
+    aAdd(aFields1, {"T1_DTINI","D",8,0,"Data Inicial","",""})
+    aAdd(aFields1, {"T1_DTFIM","D",8,0,"Data Final","",""})
+    aAdd(aFields1, {"T1_SALDO","N",16,2,"Saldo Bancário","",""})
+
+    oTabTMP1:SetFields(aFields1)
+    oTabTMP1:Create()
+
+    aAdd(aFields2, {"T2_CONTA","C",20,0,"Conta Contábil","","CT1"})
+    aAdd(aFields2, {"T2_DESCRIC","C",95,0,"Descrição","",""})
+    aAdd(aFields2, {"T2_1TRI","N",16,2,"1º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+    aAdd(aFields2, {"T2_2TRI","N",16,2,"2º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+    aAdd(aFields2, {"T2_3TRI","N",16,2,"3º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+    aAdd(aFields2, {"T2_4TRI","N",16,2,"4º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+
+    oTabTMP2:SetFields(aFields2)
+    oTabTMP2:Create()
+
+    aAdd(aFields3, {"T3_CONTA","C",20,0,"Conta Contábil","","CT1"})
+    aAdd(aFields3, {"T3_DESCRIC","C",95,0,"Descrição","",""})
+    aAdd(aFields3, {"T3_1TRI","N",16,2,"1º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+    aAdd(aFields3, {"T3_2TRI","N",16,2,"2º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+    aAdd(aFields3, {"T3_3TRI","N",16,2,"3º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+    aAdd(aFields3, {"T3_4TRI","N",16,2,"4º TRIM."+cAno,"@E 9,999,999,999,999.99",""})
+
+    oTabTMP3:SetFields(aFields3)
+    oTabTMP3:Create()
+
+    FWRestArea(aArea)
+Return
+ 
+/*---------------------------------------------------------------------*
+ | Func:  MenuDef                                                      |
+ | Desc:  Criação do menu MVC                                          |
+ | Obs.:  /                                                            |
+ *---------------------------------------------------------------------*/
+ 
+Static Function MenuDef()
+Local aRot := {}
+     
+ADD OPTION aRot TITLE 'Incluir'     ACTION 'VIEWDEF.PFISF01'     OPERATION 3 ACCESS 0 //OPERATION 3
+ADD OPTION aRot TITLE 'Alterar'     ACTION 'U_PFISF08("SZG",4)'  OPERATION 4 ACCESS 0 //OPERATION 4
+ADD OPTION aRot TITLE 'Visualizar'  ACTION 'VIEWDEF.PFISF01'     OPERATION 2 ACCESS 0 //OPERATION 2
+ADD OPTION aRot TITLE 'Imprimir'    ACTION 'U_PFISR01'           OPERATION 7 ACCESS 0 //OPERATION 7
+ADD OPTION aRot TITLE 'Excluir'     ACTION 'VIEWDEF.PFISF01'     OPERATION 5 ACCESS 0 //OPERATION 5
+    
+Return aRot
+
+/*---------------------------------------------------------------------*
+ | Func:  ModelDef                                                     |
+ | Desc:  Criação do modelo de dados MVC                               |
+ | Obs.:  /                                                            |
+ *---------------------------------------------------------------------*/
+ 
+Static Function ModelDef()
+Local oModel as object
+Local oStrField as object
+Local oStrExclu as object
+Local oStrComum as object
+Local oStrOutro as object
+
+oStrField := FWFormStruct(1, 'SZG')
+oStrExclu := FWFormStruct(1, 'SZM')
+oStrComum := FWFormStruct(1, 'SZO')
+oStrOutro := FWFormStruct(1, 'SZP')
+
+oStrField:SetProperty("ZG_COD", MODEL_FIELD_INIT, FWBuildFeature(STRUCT_FEATURE_INIPAD, "GetSXENum('SZG','ZG_COD')"))
+oStrField:SetProperty("ZG_DATAFIM", MODEL_FIELD_VALID, FwBuildFeature(STRUCT_FEATURE_VALID, 'IIF(SubStr(DToC(FWFldGet("ZG_DATAINI")),4) == SubStr(DToC(FWFldGet("ZG_DATAFIM")),4),.T.,.F.)'))
+oStrField:AddTrigger("ZG_DATAFIM"  ,"ZG_PERIODO"  ,{ || IIF(SubStr(DToC(FWFldGet("ZG_DATAINI")),4) == SubStr(DToC(FWFldGet("ZG_DATAFIM")),4),.T.,.F.)},;
+                                                   { || SubStr(DToC(FWFldGet("ZG_DATAFIM")),4)})
+
+oModel := MPFormModel():New('PFISF01M',/*bPre*/,/*bPost*/,/*bCommit*/,/*bCancel*/)
+oModel:AddFields('CABEC',/*cOwner*/,oStrField/*bPre*/,/*bPos*/,/*bLoad*/)
+oModel:AddGrid('EXCLU','CABEC',oStrExclu,/*bLinePre*/,/*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)
+oModel:AddGrid('COMUM','CABEC',oStrComum,/*bLinePre*/,/*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)
+oModel:AddGrid('OUTRO','CABEC',oStrOutro,/*bLinePre*/,/*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)
+
+oModel:SetRelation("EXCLU", {{"ZM_FILIAL", "xFilial('SZM')"},; 
+                             {"ZM_COD", "ZG_COD"}}, SZM->(IndexKey(1)))
+oModel:SetRelation("COMUM", {{"ZO_FILIAL", "xFilial('SZO')"},; 
+                             {"ZO_COD", "ZG_COD"}}, SZO->(IndexKey(1)))
+oModel:SetRelation("OUTRO", {{"ZP_FILIAL", "xFilial('SZP')"},; 
+                             {"ZP_COD", "ZG_COD"}}, SZP->(IndexKey(1)))
+
+oModel:SetPrimaryKey({})
+
+oModel:AddCalc( 'CALCULOEXCLU',  'CABEC', 'EXCLU', 'ZM_VALCONT' , 'VALCONT' , 'SUM' , { || .T. },,'Total VC'   )
+oModel:AddCalc( 'CALCULOEXCLU',  'CABEC', 'EXCLU', 'ZM_BASEICM' , 'BASEICM' , 'SUM' , { || .T. },,'Total BC'   )
+oModel:AddCalc( 'CALCULOEXCLU',  'CABEC', 'EXCLU', 'ZM_VALICM'  , 'VALICM'  , 'SUM' , { || .T. },,'Total ICMS' )
+
+oModel:AddCalc( 'CALCULOCOMUM',  'CABEC', 'COMUM', 'ZO_VALCONT' , 'VALCONT' , 'SUM' , { || .T. },,'Total VC'   )
+oModel:AddCalc( 'CALCULOCOMUM',  'CABEC', 'COMUM', 'ZO_BASEICM' , 'BASEICM' , 'SUM' , { || .T. },,'Total BC'   )
+oModel:AddCalc( 'CALCULOCOMUM',  'CABEC', 'COMUM', 'ZO_VALICM'  , 'VALICM'  , 'SUM' , { || .T. },,'Total ICMS' )
+
+oModel:AddCalc( 'CALCULOOUTRO',  'CABEC', 'OUTRO', 'ZP_VALCONT' , 'VALCONT' , 'SUM' , { || .T. },,'Total VC'   )
+oModel:AddCalc( 'CALCULOOUTRO',  'CABEC', 'OUTRO', 'ZP_BASEICM' , 'BASEICM' , 'SUM' , { || .T. },,'Total BC'   )
+oModel:AddCalc( 'CALCULOOUTRO',  'CABEC', 'OUTRO', 'ZP_VALICM'  , 'VALICM'  , 'SUM' , { || .T. },,'Total ICMS' )
+
+oModel:SetDescription("Movimentos por CFOP")
+
+oModel:GetModel('EXCLU'):SetOptional(.T.)
+oModel:GetModel('COMUM'):SetOptional(.T.)
+oModel:GetModel('OUTRO'):SetOptional(.T.)
+
+Return oModel
+
+/*---------------------------------------------------------------------*
+ | Func:  ViewDef                                                      |
+ | Desc:  Criação da visão MVC                                         |
+ | Obs.:  /                                                            |
+ *---------------------------------------------------------------------*/
+ 
+Static Function ViewDef()
+Local oView as object
+Local oModel as object
+Local oStrCab as object
+Local oStrExclu as object
+Local oStrComum as object
+Local oStrOutro as object
+Local oStrCalcExclu as object
+Local oStrCalcComum as object
+Local oStrCalcOutro as object
+
+oModel := FWLoadModel("PFISF01")
+oStrCab := FWFormStruct(2, 'SZG')
+oStrExclu := FWFormStruct(2, 'SZM')
+oStrComum := FWFormStruct(2, 'SZO')
+oStrOutro := FWFormStruct(2, 'SZP')
+oStrCalcExclu := FWCalcStruct(oModel:GetModel('CALCULOEXCLU'))
+oStrCalcComum := FWCalcStruct(oModel:GetModel('CALCULOCOMUM'))
+oStrCalcOutro := FWCalcStruct(oModel:GetModel('CALCULOOUTRO'))
+
+oView := FwFormView():New()
+oView:SetModel(oModel)
+oView:SetProgressBar(.T.)
+oView:AddField("VIEW_MASTER", oStrCab,"CABEC")
+oView:AddGrid("VIEW_EXCLU"  , oStrExclu,"EXCLU")
+oView:AddGrid("VIEW_COMUM"  , oStrComum,"COMUM")
+oView:AddGrid("VIEW_OUTRO"  , oStrOutro,"OUTRO")
+oView:AddField('VIEW_CALCEXCLU' , oStrCalcExclu,'CALCULOEXCLU')
+oView:AddField('VIEW_CALCCOMUM' , oStrCalcComum,'CALCULOCOMUM')
+oView:AddField('VIEW_CALCOUTRO' , oStrCalcOutro,'CALCULOOUTRO')
+
+oView:CreateHorizontalBox("BOX_CABEC", 10 )
+oView:CreateHorizontalBox("BOX_MEIO", 90 )
+oView:CreateFolder('ABAS','BOX_MEIO')
+oView:AddSheet('ABAS', 'ABA_1', 'Exclusivo/Compra Revenda')
+oView:AddSheet('ABAS', 'ABA_2', 'Comuns/Rateio')
+oView:AddSheet('ABAS', 'ABA_3', 'Outros')
+oView:CreateHorizontalBox("BOX_EXCLU", 90, /*cIdOwner*/, /*lUsePixel*/, 'ABAS', 'ABA_1')
+oView:CreateHorizontalBox('CALCEXCLU', 10, /*cIdOwner*/, /*lUsePixel*/, 'ABAS', 'ABA_1')
+oView:CreateHorizontalBox("BOX_COMUM", 90, /*cIdOwner*/, /*lUsePixel*/, 'ABAS', 'ABA_2')
+oView:CreateHorizontalBox('CALCCOMUM', 10, /*cIdOwner*/, /*lUsePixel*/, 'ABAS', 'ABA_2')
+oView:CreateHorizontalBox("BOX_OUTRO", 90, /*cIdOwner*/, /*lUsePixel*/, 'ABAS', 'ABA_3')
+oView:CreateHorizontalBox('CALCOUTRO', 10, /*cIdOwner*/, /*lUsePixel*/, 'ABAS', 'ABA_3')
+
+oView:setOwnerView("VIEW_MASTER", "BOX_CABEC")
+oView:setOwnerView("VIEW_EXCLU", "BOX_EXCLU")
+oView:SetOwnerView('VIEW_CALCEXCLU' ,'CALCEXCLU')
+oView:setOwnerView("VIEW_COMUM", "BOX_COMUM")
+oView:SetOwnerView('VIEW_CALCCOMUM' ,'CALCCOMUM')
+oView:setOwnerView("VIEW_OUTRO", "BOX_OUTRO")
+oView:SetOwnerView('VIEW_CALCOUTRO' ,'CALCOUTRO')
+
+oView:setDescription( "" )
+
+oView:AddUserButton( 'Consultar', 'MAGIC_BMP',;
+                        {|| IIF(oView:GetOperation() == 3,DadosGrid(),)},;
+                         /*cToolTip  | Comentário do botão*/,;
+                         /*nShortCut | Codigo da Tecla para criação de Tecla de Atalho*/,;
+                         /*aOptions  | */,;
+                         /*lShowBar */ .T.)
+
+Return oView
+
+/*---------------------------------------------------------------------*
+ | Func:  DadosGrid                                                    |
+ | Desc:  Realiza a carga de dados nos grids da tela.                  |
+ | Obs.:  /                                                            |
+ *---------------------------------------------------------------------*/
+Static Function DadosGrid()
+Local oModel      := FWModelActive()
+Local oView       := FWViewActive()
+Local oModelCabec := oModel:GetModel("CABEC")
+Local oModelExclu := oModel:GetModel("EXCLU")
+Local oModelComum := oModel:GetModel("COMUM")
+Local oModelOutro := oModel:GetModel("OUTRO")
+Local oStruSZG    := FWFormStruct( 1, 'SZG' , /* bAvalCampo */, /* lViewUsado */ )
+Local aFields     := oStruSZG:GetFields()
+Local aFieldObg   := {}
+Local cMsg        := ""
+Local __cAlias    := "TEMP"+FWTimeStamp(1)
+Local cQry        := ""
+Local nY
+
+For nY := 1 To Len(aFields)
+    If aFields[nY,10] .AND. Empty(FWFldGet(aFields[nY,3]))
+         aAdd(aFieldObg,{aFields[nY,3],aFields[nY,1]})
+    EndIf 
+Next nY 
+
+If !Empty(aFieldObg)
+    
+    cMsg += 'O(s) campo(s): '+ENTER
+    For nY := 1 To Len(aFieldObg)
+        cMsg += Alltrim(aFieldObg[nY,1])+" - "+Alltrim(aFieldObg[nY,2])+ENTER
+    Next nY
+    cMsg += ENTER+"Deve ser preenchido(s)."
+
+    FWAlertHelp('Existem campos obrigatórios não preechidos.',cMsg)
+    
+    Return
+
+EndIf
+
+DBSelectArea(cTabela)
+SZG->(DBSetOrder(2))
+If SZG->(MSSeek(FWxFilial(cTabela)+Pad(SubStr(DToC(FWFldGet("ZG_DATAFIM")),4),TamSX3("ZG_PERIODO")[1])))
+    
+    FWAlertWarning("Já existe o mesmo periodo cadastrado.")
+
+    oModelExclu:ClearData(.T.)
+    oModelComum:ClearData(.T.)
+    oModelOutro:ClearData(.T.)
+
+    oModel:GetModel('CALCULOEXCLU'):LoadValue("VALCONT", 0)
+    oModel:GetModel('CALCULOEXCLU'):LoadValue("BASEICM", 0)
+    oModel:GetModel('CALCULOEXCLU'):LoadValue("VALICM" , 0)
+    oModel:GetModel('CALCULOCOMUM'):LoadValue("VALCONT", 0)
+    oModel:GetModel('CALCULOCOMUM'):LoadValue("BASEICM", 0)
+    oModel:GetModel('CALCULOCOMUM'):LoadValue("VALICM" , 0)
+    oModel:GetModel('CALCULOOUTRO'):LoadValue("VALCONT", 0)
+    oModel:GetModel('CALCULOOUTRO'):LoadValue("BASEICM", 0)
+    oModel:GetModel('CALCULOOUTRO'):LoadValue("VALICM" , 0)
+
+    oView:Refresh()
+
+    Return
+Else
+    oModelCabec:LoadValue("ZG_PERIODO", SubStr(DToC(FWFldGet("ZG_DATAFIM")),4))    
+EndIf
+
+oModelExclu:ClearData(.T.)
+oModelComum:ClearData(.T.)
+oModelOutro:ClearData(.T.)
+
+oModel:GetModel('CALCULOEXCLU'):LoadValue("VALCONT", 0)
+oModel:GetModel('CALCULOEXCLU'):LoadValue("BASEICM", 0)
+oModel:GetModel('CALCULOEXCLU'):LoadValue("VALICM" , 0)
+oModel:GetModel('CALCULOCOMUM'):LoadValue("VALCONT", 0)
+oModel:GetModel('CALCULOCOMUM'):LoadValue("BASEICM", 0)
+oModel:GetModel('CALCULOCOMUM'):LoadValue("VALICM" , 0)
+oModel:GetModel('CALCULOOUTRO'):LoadValue("VALCONT", 0)
+oModel:GetModel('CALCULOOUTRO'):LoadValue("BASEICM", 0)
+oModel:GetModel('CALCULOOUTRO'):LoadValue("VALICM" , 0)
+
+cQry := " SELECT FT_FILIAL, FT_CFOP, SUM(FT_VALCONT) AS FT_VALCONT, SUM(FT_BASEICM) AS FT_BASEICM, SUM(FT_VALICM) AS FT_VALICM "
+cQry += " FROM "+ RetSqlName("SFT") + " SFT "
+cQry += " INNER JOIN "+ RetSqlName("SZX") +" SZX ON SZX.ZX_PRODUTO= SFT.FT_PRODUTO "
+cQry += " WHERE SFT.D_E_L_E_T_ <> '*' " 
+cQry += " AND   SZX.D_E_L_E_T_ <> '*' "
+cQry += " AND   SZX.ZX_TPCRED = 'E'  "
+cQry += " AND   SFT.FT_FILIAL  = '"+FwxFilial('SFT')+"' "
+cQry += " AND   SFT.FT_EMISSAO BETWEEN "+ DToS(FWFldGet("ZG_DATAINI")) +" AND "+ DToS(FWFldGet("ZG_DATAFIM"))
+cQry += " AND   SFT.FT_TIPOMOV = 'E' " 
+cQry += " GROUP BY FT_FILIAL, FT_CFOP "
+cQry := ChangeQuery(cQry)
+IF Select(__cAlias) <> 0
+    (__cAlias)->(DbCloseArea())
+EndIf
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),__cAlias,.T.,.T.)
+
+While!(__cAlias)->(EOF())
+    
+    oModelExclu:AddLine()
+    oModelExclu:LoadValue("ZM_FILIAL"  , FwxFilial("SZM"))
+    oModelExclu:LoadValue("ZM_COD"     , FWFldGet("ZG_COD"))
+    oModelExclu:LoadValue("ZM_CFOP"    , (__cAlias)->FT_CFOP)
+    oModelExclu:LoadValue("ZM_DESCFOP" , FWGetSX5('13',(__cAlias)->FT_CFOP,'pt-br')[1][4])
+    oModelExclu:LoadValue("ZM_VALCONT" , (__cAlias)->FT_VALCONT)
+    oModelExclu:LoadValue("ZM_BASEICM" , (__cAlias)->FT_BASEICM)
+    oModelExclu:LoadValue("ZM_VALICM"  , (__cAlias)->FT_VALICM)    
+
+    oView:Refresh("VIEW_EXCLU")
+    oView:Refresh("VIEW_CALCEXCLU")
+
+(__cAlias)->(DBSkip())
+EndDo
+
+If Select(__cAlias) > 0                                 
+    (__cAlias)->(dbCloseArea())
+EndIf
+
+cQry := " SELECT FT_FILIAL, FT_CFOP, SUM(FT_VALCONT) AS FT_VALCONT, SUM(FT_BASEICM) AS FT_BASEICM, SUM(FT_VALICM) AS FT_VALICM "
+cQry += " FROM "+ RetSqlName("SFT") + " SFT "
+cQry += " INNER JOIN "+ RetSqlName("SZX") +" SZX ON SZX.ZX_PRODUTO= SFT.FT_PRODUTO "
+cQry += " WHERE SFT.D_E_L_E_T_ <> '*' " 
+cQry += " AND   SZX.D_E_L_E_T_ <> '*' "
+cQry += " AND   SZX.ZX_TPCRED = 'C'  "
+cQry += " AND   SFT.FT_FILIAL  = '"+FwxFilial('SFT')+"' "
+cQry += " AND   SFT.FT_EMISSAO BETWEEN "+ DToS(FWFldGet("ZG_DATAINI")) +" AND "+ DToS(FWFldGet("ZG_DATAFIM"))
+cQry += " AND   SFT.FT_TIPOMOV = 'E' "
+cQry += " GROUP BY FT_FILIAL, FT_CFOP "
+cQry := ChangeQuery(cQry)
+IF Select(__cAlias) <> 0
+    (__cAlias)->(DbCloseArea())
+EndIf
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),__cAlias,.T.,.T.)
+
+While!(__cAlias)->(EOF())
+    
+    oModelComum:AddLine()
+    oModelComum:LoadValue("ZO_FILIAL"  , FwxFilial("SZO"))
+    oModelComum:LoadValue("ZO_COD"     , FWFldGet("ZG_COD"))
+    oModelComum:LoadValue("ZO_CFOP"    , (__cAlias)->FT_CFOP)
+    oModelComum:LoadValue("ZO_DESCFOP" , FWGetSX5('13',(__cAlias)->FT_CFOP,'pt-br')[1][4])
+    oModelComum:LoadValue("ZO_VALCONT" , (__cAlias)->FT_VALCONT)
+    oModelComum:LoadValue("ZO_BASEICM" , (__cAlias)->FT_BASEICM)
+    oModelComum:LoadValue("ZO_VALICM"  , (__cAlias)->FT_VALICM)
+
+    oView:Refresh("VIEW_COMUM")
+    oView:Refresh("VIEW_CALCCOMUM")
+
+(__cAlias)->(DBSkip())
+EndDo
+
+If Select(__cAlias) > 0                                 
+    (__cAlias)->(dbCloseArea())
+EndIf
+
+cQry := " SELECT FT_FILIAL, FT_CFOP, SUM(FT_VALCONT) AS FT_VALCONT, SUM(FT_BASEICM) AS FT_BASEICM, SUM(FT_VALICM) AS FT_VALICM "
+cQry += " FROM "+ RetSqlName("SFT") + " SFT "
+cQry += " INNER JOIN "+ RetSqlName("SZX") +" SZX ON SZX.ZX_PRODUTO = SFT.FT_PRODUTO "
+cQry += " WHERE SFT.D_E_L_E_T_ <> '*' " 
+cQry += " AND   SZX.D_E_L_E_T_ <> '*' "
+cQry += " AND   SZX.ZX_TPCRED = 'O'  " 
+cQry += " AND   SFT.FT_FILIAL  = '"+FwxFilial('SFT')+"' "
+cQry += " AND   SFT.FT_EMISSAO BETWEEN "+ DToS(FWFldGet("ZG_DATAINI")) +" AND "+ DToS(FWFldGet("ZG_DATAFIM"))
+cQry += " AND   SFT.FT_TIPOMOV = 'E' "
+cQry += " GROUP BY FT_FILIAL, FT_CFOP "
+cQry := ChangeQuery(cQry)
+IF Select(__cAlias) <> 0
+    (__cAlias)->(DbCloseArea())
+EndIf
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQry),__cAlias,.T.,.T.)
+
+While!(__cAlias)->(EOF())
+
+    oModelOutro:AddLine()
+    oModelOutro:LoadValue("ZP_FILIAL"  , FwxFilial("SZP"))
+    oModelOutro:LoadValue("ZP_COD"     , FWFldGet("ZG_COD"))
+    oModelOutro:LoadValue("ZP_CFOP"    , (__cAlias)->FT_CFOP)
+    oModelOutro:LoadValue("ZP_DESCFOP" , FWGetSX5('13',(__cAlias)->FT_CFOP,'pt-br')[1][4])
+    oModelOutro:LoadValue("ZP_VALCONT" , (__cAlias)->FT_VALCONT)
+    oModelOutro:LoadValue("ZP_BASEICM" , (__cAlias)->FT_BASEICM)
+    oModelOutro:LoadValue("ZP_VALICM"  , (__cAlias)->FT_VALICM)
+
+    oView:Refresh("VIEW_OUTRO")
+    oView:Refresh("VIEW_CALCOUTRO")
+
+(__cAlias)->(DBSkip())
+EndDo
+
+If Select(__cAlias) > 0                                 
+    (__cAlias)->(dbCloseArea())
+EndIf
+
+oModelExclu:GoLine(1)
+oModelComum:GoLine(1)
+oModelOutro:GoLine(1)
+oView:Refresh()
+
+Return
