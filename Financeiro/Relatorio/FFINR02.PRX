@@ -1,0 +1,826 @@
+//Bibliotecas
+#Include 'Protheus.ch'
+#Include 'FWMVCDef.ch'
+#Include "TBICONN.CH"
+#Include "TopConn.ch"
+
+//----------------------------------------------------------------------
+/*/{PROTHEUS.DOC} FFINR02
+FUNÇÃO FFINR02 - Resumo de Fluxo de Caixa FOCO
+@OWNER Foco Aluguel
+@VERSION PROTHEUS 12
+@SINCE 08/05/2024
+/*/
+//----------------------------------------------------------------------
+
+User Function FFINR02()
+    
+    Private oExcel
+    Private oLeft,oCenter,oQuebraTxt,oEstBVer,oEstBNVer,oEstCNVer,oEstiloLef,oFmtNum,oFmtNumN,oFmtNumNCin,oFmtNumNVer
+    Private oFundoCin1,oFundoCin2,oFundoBranco,oFundoVerme,oEstiloCent,oEstiloCenN
+    Private nCorCinza1,nCorCinza2,nCorBranco,nCorVerme,nCorVerde,nVerdana8,nVerdana8N,nVerdana8B,nVerd8B,nCentury12,nCentury22,nFmtNum,nBordaAll
+    Private cDirImg    := SuperGetMV("MV_DIRDOC")+"relfluxo\"
+    Private cNomPlan   := "Fluxo de Caixa - "+MesExtenso(Val(SubSTR(DToC(dDataIni),3,2)))+" "+Alltrim(SubSTR(DToC(dDataIni),7))
+    Private cContCart  := SuperGetMV("MV_XCONCAR",.F.,"")
+    Private cContBrok  := SuperGetMV("MV_XCONBRO",.F.,"")
+    Private cContPIX   := SuperGetMV("MV_XCONPIX",.F.,"")
+    Private cContCash  := SuperGetMV("MV_XCONCAS",.F.,"")
+    Private cContMult  := SuperGetMV("MV_XCONMUL",.F.,"")
+    Private cContAPP   := SuperGetMV("MV_XCONAPP",.F.,"")
+    Private nTotalDay  := Len(aDays)
+    Private nColuna    := 0
+    Private cPictVal   := GetSx3Cache("E1_VALOR","X3_PICTURE")
+    Private nY, nLin
+
+    cDirImg := Lower(IIF(IsSrvUnix(),StrTran(cDirImg,"\","/"),cDirImg))
+
+	oExcel	:= YExcel():new(cNomPlan)
+    nCorCinza1  := oExcel:CorPreenc("F2F2F2")	//Cor de Fundo Cinza
+    nCorCinza2  := oExcel:CorPreenc("D9D9D9")	//Cor de Fundo Cinza
+    nCorBranco  := oExcel:CorPreenc("FFFFFF")	//Cor de Fundo Branca
+    nCorVerme   := oExcel:CorPreenc("FF0000")	//Cor de Fundo Vermelho
+    nCorVerde   := oExcel:CorPreenc("A9D08E")	//Cor de Fundo Verde
+	oLeft	    := oExcel:Alinhamento("left","center")
+    oCenter	    := oExcel:Alinhamento("center","center")
+	oQuebraTxt	:= oExcel:Alinhamento("center","center",,.T.)
+	nBordaAll	:= oExcel:Borda("ALL")
+    nVerdana8	:= oExcel:AddFont(8,"000000","Verdana","2",)
+    nVerdana8N	:= oExcel:AddFont(8,"000000","Verdana","2",,.T.)
+    nVerdana8B	:= oExcel:AddFont(8,"FFFFFF","Verdana","2",,.T.)
+    nVerd8B	    := oExcel:AddFont(8,"006400","Verdana","2",,.T.)
+    nCentury12	:= oExcel:AddFont(12,"000000","Century Gothic","2",)
+    nCentury22	:= oExcel:AddFont(22,"000000","Century Gothic","2",)
+    
+	nFmtNum     := oExcel:AddFmtNum(2/*nDecimal*/,.T./*lMilhar*/,"R$ "/*cPrefixo*/,/*cSufixo*/,/*cNegINI*/,/*cNegFim*/,/*cValorZero*/,/*cCor*/,/*cCorNeg*/,/*nNumFmtId*/)
+
+	oEstBVer	:= oExcel:NewStyle():Setfill(nCorBranco):SetFont(nVerdana8):SetaValores({oLeft}):Setborder(nBordaAll)
+    oEstBNVer	:= oExcel:NewStyle():Setfill(nCorBranco):SetFont(nVerdana8N):SetaValores({oLeft}):Setborder(nBordaAll)
+    oEstCNVer	:= oExcel:NewStyle():Setfill(nCorCinza1):SetFont(nVerdana8N):SetaValores({oLeft}):Setborder(nBordaAll)
+    oEstiloLef  := oExcel:NewStyle():Setfill(nCorBranco):SetFont(nVerdana8):SetaValores({oLeft}):Setborder(nBordaAll)
+    oEstiloLefN := oExcel:NewStyle():Setfill(nCorBranco):SetFont(nVerdana8N):SetaValores({oLeft}):Setborder(nBordaAll)
+    oEstiloCent := oExcel:NewStyle():Setfill(nCorBranco):SetFont(nVerdana8):SetaValores({oCenter}):Setborder(nBordaAll)
+    oEstiloCenN := oExcel:NewStyle():Setfill(nCorBranco):SetFont(nVerdana8N):SetaValores({oCenter}):Setborder(nBordaAll)
+
+	oFundoCin1   := oExcel:NewStyle():Setfont(nCentury22):Setfill(nCorCinza1):SetaValores({oLeft})
+    oFundoCin2   := oExcel:NewStyle():Setfont(nVerdana8N):Setfill(nCorCinza2):SetaValores({oLeft}):Setborder(nBordaAll)
+	oFundoBranco := oExcel:NewStyle():Setfill(nCorBranco)
+    oFundoVerme  := oExcel:NewStyle():Setfont(nVerdana8B):Setfill(nCorVerme):SetaValores({oCenter})
+    oFundoVerde  := oExcel:NewStyle():Setfont(nVerd8B):Setfill(nCorVerde):SetaValores({oLeft}):Setborder(nBordaAll)
+
+    oFmtNum     := oExcel:NewStyle():SetFont(nVerdana8):SetnumFmt(nFmtNum):Setborder(nBordaAll)
+    oFmtNumN    := oExcel:NewStyle():SetFont(nVerdana8):SetnumFmt(nFmtNum):Setborder(nBordaAll)
+    oFmtNumNCin := oExcel:NewStyle():SetFont(nVerdana8N):Setfill(nCorCinza2):SetnumFmt(nFmtNum):Setborder(nBordaAll)
+    oFmtNumNVer := oExcel:NewStyle():SetFont(nVerd8B):Setfill(nCorVerde):SetnumFmt(nFmtNum):Setborder(nBordaAll)
+
+    PlanFluxo()
+    PlanReceber()
+    PlanPagar()
+    PlanOutros()
+
+    oExcel:Save(GetTempPath())
+	oExcel:OpenApp()
+	oExcel:Close()
+
+Return
+
+/*/{Protheus.doc} PlanFluxo
+Preenche a planilha de Fluxo de Caixa
+@type function
+@return return_type, return_description
+/*/
+Static Function PlanFluxo
+    Local nValor := 0
+    Local nY
+
+    oExcel:ADDPlan("FLUXO")
+
+    nLin := 1
+    oExcel:SetRowH(40,nLin,2)
+    oExcel:AddTamCol(nLin,1,5)
+    oExcel:AddTamCol(2,nTotalDay+2,21)
+    oExcel:mergeCells(nLin,1,nLin,nTotalDay+2) //Mescla as células
+    oExcel:Pos(nLin,1):SetStyle(oFundoCin1)
+
+    //Logo FOCO
+	If File(cDirImg+"logo.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"logo.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,1,2,109,055,"px",)
+	EndIf
+
+    
+    nLin++
+    oExcel:mergeCells(nLin,1,nLin,nTotalDay+2) //Mescla as células
+    oExcel:Pos(nLin,1):SetValue("FLUXO DE CAIXA"):SetStyle(oFundoCin1)
+
+    nLin++
+    oExcel:SetRowH(15,nLin,nLin)
+    oExcel:mergeCells(nLin,1,nLin,2)
+    oExcel:Pos(nLin,1):SetValue("DATA ->"):SetStyle(oFundoVerme)
+    nColuna := 3
+    For nY := 1 To Len(aDays)
+        oExcel:Pos(nLin,nColuna):SetValue(StrZero(Val(SubSTR(DToS(aDays[nY]),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR(DToS(aDays[nY]),5,2))),1,3)):SetStyle(oFundoVerme)
+        nColuna++
+    Next 
+
+    nLin++
+    oExcel:SetRowH(15,nLin,nLin)
+    oExcel:mergeCells(nLin,1,nLin,2)
+    oExcel:Pos(nLin,1):SetValue("TIPO DE ENTRADA"):SetStyle(oFundoVerme)
+    nColuna := 3
+    For nY := 1 To Len(aDays)
+        oExcel:Pos(nLin,nColuna):SetValue(Upper(DiaSemana(SToD(DToS(aDays[nY]), 3)))):SetStyle(oFundoVerme)
+        nColuna++
+    Next 
+
+    oExcel:SetRowH(30)
+    
+    nLin++
+
+    //CARTAO
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgcart.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgcart.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("CARTÃO"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)
+        nValor := 0
+        
+        IF Select(cAliasSE5) <> 0
+            DBSelectArea((cAliasSE5))
+            (cAliasSE5)->(DbGoTop())
+            While (cAliasSE5)->(!Eof())
+
+                If aDays[nY] == SToD((cAliasSE5)->(E5_DATA)) .AND. Alltrim((cAliasSE5)->(E5_NATUREZ)) $ (cContCart)
+                    nValor += (cAliasSE5)->(VALOR)
+                Else 
+                    oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+                EndIF 
+                (cAliasSE5)->(DBSkip())
+            EndDo
+        Else
+            oExcel:Pos(nLin,nColuna):SetValue(0):SetStyle(oFmtNum)
+        EndIF
+
+    Next   
+
+    nLin++
+
+    //BROKER E PF
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgbroker.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgbroker.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("BROKER E PF"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)    
+        nValor := 0
+
+        DBSelectArea((cAliasSE1))
+        (cAliasSE1)->(DbGoTop())
+        While (cAliasSE1)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE1)->E1_VENCREA) .AND. Alltrim((cAliasSE1)->(E1_CREDIT)) $ (cContBrok)
+                nValor += (cAliasSE1)->(VALOR)
+            Else    
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE1)->(DBSkip())
+        EndDo        
+    Next
+
+    nLin++
+
+    //PIX
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgpix.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgpix.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("PIX"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)    
+        nValor := 0
+
+        DBSelectArea((cAliasSE1))
+        (cAliasSE1)->(DbGoTop())
+        While (cAliasSE1)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE1)->E1_VENCREA) .AND. Alltrim((cAliasSE1)->(E1_CREDIT)) $ (cContPIX)
+                nValor += (cAliasSE1)->(VALOR)
+            Else    
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE1)->(DBSkip())
+        EndDo        
+    Next
+    
+    nLin++
+
+    //CASH
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgcash.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgcash.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("CASH"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)    
+        nValor := 0
+
+        DBSelectArea((cAliasSE1))
+        (cAliasSE1)->(DbGoTop())
+        While (cAliasSE1)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE1)->E1_VENCREA) .AND. Alltrim((cAliasSE1)->(E1_CREDIT)) $ (cContCash)
+                nValor += (cAliasSE1)->(VALOR)
+            Else    
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE1)->(DBSkip())
+        EndDo        
+    Next
+    
+    nLin++
+
+    //MULTAS
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgmultas.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgmultas.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("MULTAS"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)    
+        nValor := 0
+
+        DBSelectArea((cAliasSE1))
+        (cAliasSE1)->(DbGoTop())
+        While (cAliasSE1)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE1)->E1_VENCREA) .AND. Alltrim((cAliasSE1)->(E1_CREDIT)) $ (cContMult)
+                nValor += (cAliasSE1)->(VALOR)
+            Else    
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE1)->(DBSkip())
+        EndDo        
+    Next
+
+    nLin++
+
+    //APP/MENSAL
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgapp.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgapp.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("APP/MENSAL"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)    
+        nValor := 0
+
+        DBSelectArea((cAliasSE1))
+        (cAliasSE1)->(DbGoTop())
+        While (cAliasSE1)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE1)->E1_VENCREA) .AND. Alltrim((cAliasSE1)->(E1_CREDIT)) $ (cContAPP)
+                nValor += (cAliasSE1)->(VALOR)
+            Else    
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE1)->(DBSkip())
+        EndDo        
+    Next
+
+    nLin++
+
+    //OUTROS
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgoutros.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgoutros.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("OUTROS"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)    
+        nValor := 0
+
+        DBSelectArea((cAliasSE1))
+        (cAliasSE1)->(DbGoTop())
+        While (cAliasSE1)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE1)->E1_VENCREA) .AND. !( Alltrim((cAliasSE1)->(E1_CREDIT)) $(cContBrok+"/"+cContPIX+"/"+cContCash+"/"+cContMult+"/"+cContAPP) )
+                nValor += (cAliasSE1)->(VALOR)
+            Else    
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE1)->(DBSkip())
+        EndDo        
+    Next
+
+    nLin++
+
+    //RECEITA TOTAL
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oFundoCin2)
+    If File(cDirImg+"imgreceita.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgreceita.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("RECEITA TOTAL"):SetStyle(oFundoCin2)
+
+    nColuna := 3
+
+    For nY := 1 To Len(aDays)
+        oExcel:Pos(nLin,nColuna):SetValue(0,"=SOMA(C5:C11)"):SetStyle(oFmtNumNCin)
+        nColuna++
+    Next            
+
+    nLin++
+
+    //FORNECEDORES
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgsupplier.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgsupplier.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("FORNECEDORES"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)
+        nValor := 0
+        
+        DBSelectArea((cAliasSE2))
+        (cAliasSE2)->(DbGoTop())
+        While (cAliasSE2)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE2)->(E2_VENCREA))
+                nValor += (cAliasSE2)->(VALOR)
+            Else 
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE2)->(DBSkip())
+        EndDo
+
+    Next
+
+    nLin++
+
+    //TOTAL CONTAS A PAGA
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oFundoCin2)
+	If File(cDirImg+"imgpagar.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgpagar.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,2):SetValue("TOTAL CONTAS A PAGAR"):SetStyle(oFundoCin2)
+    
+    nColuna := 3
+    
+    For nY := 1 To Len(aDays)
+        oExcel:Pos(nLin,nColuna):SetValue(0):SetStyle(oFmtNumNCin)
+        nColuna++
+    Next
+
+    nLin++
+
+    //OUTROS DÉBITOS
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    If File(cDirImg+"imgdebitos.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgdebitos.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("OUTROS DÉBITOS"):SetStyle(oEstCNVer)
+
+    For nY := 1 To Len(aDays)
+
+        nColuna := (nY+2)
+        nValor := 0
+        
+        IF Select(cAliasSE5) <> 0
+            DBSelectArea((cAliasSE5))
+            (cAliasSE5)->(DbGoTop())
+            While (cAliasSE5)->(!Eof())
+
+                If aDays[nY] == SToD((cAliasSE5)->(E5_DATA))
+                    nValor += (cAliasSE5)->(VALOR)
+                Else 
+                    oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+                EndIF 
+                (cAliasSE5)->(DBSkip())
+            EndDo
+        Else
+            oExcel:Pos(nLin,nColuna):SetValue("R$ " + AllToChar(nValor, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF 
+    Next
+
+    nLin++
+
+    //RESULTADO
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oFundoCin2)
+    If File(cDirImg+"imgresult.png")
+        nIDImg := oExcel:ADDImg(cDirImg+"imgresult.png") //Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+        oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+    EndIf
+    oExcel:Pos(nLin,2):SetValue("RESULTADO"):SetStyle(oFundoCin2)
+
+    nColuna := 3
+    
+    For nY := 1 To Len(aDays)
+        oExcel:Pos(nLin,nColuna):SetValue(0,"=SOMA(C12-C14-C15)"):SetStyle(oFmtNumNVer)
+        nColuna++
+    Next
+
+Return
+
+/*/{Protheus.doc} PlanReceber
+Preenche a planilha de Contas a Receber
+@type function
+@return return_type, return_description
+/*/
+Static Function PlanReceber
+    Local cMesmoDia := ""
+    Local nLin := 0
+
+    oExcel:ADDPlan("RECEBER")
+
+    oExcel:AddTamCol(1,1,8)
+    oExcel:AddTamCol(2,2,26)
+    oExcel:AddTamCol(3,3,2)
+    oExcel:AddTamCol(4,4,8)
+    oExcel:AddTamCol(5,5,18)
+    oExcel:AddTamCol(6,6,18)
+    oExcel:AddTamCol(7,7,2)
+    oExcel:AddTamCol(8,8,8)
+    oExcel:AddTamCol(9,9,18)
+    oExcel:AddTamCol(10,10,18)
+    oExcel:AddTamCol(11,11,2)
+    oExcel:AddTamCol(12,12,8)
+    oExcel:AddTamCol(13,13,18)
+    oExcel:AddTamCol(14,14,18)
+    oExcel:AddTamCol(15,15,2)
+    oExcel:AddTamCol(16,16,8)
+    oExcel:AddTamCol(17,17,18)
+    oExcel:AddTamCol(18,18,18)
+    oExcel:AddTamCol(19,19,2)
+    oExcel:AddTamCol(20,20,8)
+    oExcel:AddTamCol(21,21,18)
+    oExcel:AddTamCol(22,22,18)
+    oExcel:AddTamCol(23,23,2)
+    oExcel:AddTamCol(24,24,8)
+    oExcel:AddTamCol(25,25,18)
+    oExcel:AddTamCol(26,26,18)
+    oExcel:AddTamCol(27,27,2)
+    oExcel:AddTamCol(28,28,8)
+    oExcel:AddTamCol(29,29,18)
+    oExcel:AddTamCol(30,30,18)
+
+    nLin := 1
+    oExcel:SetRowH(50,nLin,nLin)
+    oExcel:mergeCells(nLin,1,nLin,30) //Mescla as células
+    oExcel:Pos(nLin,1):SetValue("CONTAS A RECEBER"):SetStyle(oFundoCin1)
+
+    nLin++
+    oExcel:SetRowH(30,nLin,nLin)
+    oExcel:mergeCells(nLin,5,nLin,6) //Mescla as células
+    oExcel:mergeCells(nLin,9,nLin,10) //Mescla as células
+    oExcel:mergeCells(nLin,13,nLin,14) //Mescla as células
+    oExcel:mergeCells(nLin,17,nLin,18) //Mescla as células
+    oExcel:mergeCells(nLin,21,nLin,22) //Mescla as células
+    oExcel:mergeCells(nLin,25,nLin,26) //Mescla as células
+    oExcel:mergeCells(nLin,29,nLin,30) //Mescla as células
+
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oFundoVerme)
+    //Imagem SALDO INICIAL
+	If File(cDirImg+"imgsaldo.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgsaldo.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,1,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,2):SetValue("VALOR DE SALDO INICIAL"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,4):SetValue(""):SetStyle(oFundoVerme)
+    //Imagem CARTAO
+	If File(cDirImg+"imgcart.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgcart.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,4,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,5):SetValue("RECEBIMENTO DE CARTÃO DE CRÉDITO"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,8):SetValue(""):SetStyle(oFundoVerme)
+    If File(cDirImg+"imgbroker.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgbroker.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,8,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,9):SetValue("RECEBIMENTO DE BROKER + PF"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,12):SetValue(""):SetStyle(oFundoVerme)
+    If File(cDirImg+"imgpix.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgpix.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,12,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,13):SetValue("PIX"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,16):SetValue(""):SetStyle(oFundoVerme)
+    If File(cDirImg+"imgcash.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgcash.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,16,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,17):SetValue("RECEBIMENTO DE CASH"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,20):SetValue(""):SetStyle(oFundoVerme)
+    If File(cDirImg+"imgmultas.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgmultas.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,20,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,21):SetValue("MULTAS"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,24):SetValue(""):SetStyle(oFundoVerme)
+    If File(cDirImg+"imgapp.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgapp.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,24,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,25):SetValue("APP/MENSAL/0KM"):SetStyle(oFundoVerme)
+
+    oExcel:Pos(nLin,28):SetValue(""):SetStyle(oFundoVerme)
+    If File(cDirImg+"imgoutros.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgoutros.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,nLin,28,040,035,"px",)
+	EndIf
+    oExcel:Pos(nLin,29):SetValue("OUTROS RECEBIMENTOS"):SetStyle(oFundoVerme)
+
+    nLin++
+    oExcel:SetRowH(15)
+    oExcel:Pos(nLin,1):SetValue("")
+    oExcel:Pos(nLin,2):SetValue("")
+    
+    oExcel:Pos(nLin,4):SetValue("")
+    oExcel:Pos(nLin,5):SetValue("")
+    oExcel:Pos(nLin,6):SetValue("")
+    
+    oExcel:Pos(nLin,8):SetValue("")
+    oExcel:Pos(nLin,9):SetValue("")
+    oExcel:Pos(nLin,10):SetValue("")
+    
+    oExcel:Pos(nLin,12):SetValue("")
+    oExcel:Pos(nLin,13):SetValue("")
+    oExcel:Pos(nLin,14):SetValue("")
+    
+    oExcel:Pos(nLin,16):SetValue("")
+    oExcel:Pos(nLin,17):SetValue("")
+    oExcel:Pos(nLin,18):SetValue("")
+    
+    oExcel:Pos(nLin,20):SetValue("")
+    oExcel:Pos(nLin,21):SetValue("")
+    oExcel:Pos(nLin,22):SetValue("")
+    
+    oExcel:Pos(nLin,24):SetValue("")
+    oExcel:Pos(nLin,25):SetValue("")
+    oExcel:Pos(nLin,26):SetValue("")
+    
+    oExcel:Pos(nLin,28):SetValue("")
+    oExcel:Pos(nLin,29):SetValue("")
+    oExcel:Pos(nLin,30):SetValue("")
+    
+    nLin++
+    oExcel:Pos(nLin,4):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,5):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,6):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    oExcel:Pos(nLin,8):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,9):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,10):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    oExcel:Pos(nLin,12):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,13):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,14):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    oExcel:Pos(nLin,16):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,17):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,18):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    oExcel:Pos(nLin,20):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,21):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,22):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    oExcel:Pos(nLin,24):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,25):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,26):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    oExcel:Pos(nLin,28):SetValue("DATA"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,29):SetValue("ORÇADO"):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,30):SetValue("REALIZADO"):SetStyle(oEstCNVer)
+
+    DBSelectArea((cAliasSE1))
+    (cAliasSE1)->(DbGoTop())
+    While (cAliasSE1)->(!Eof())
+
+        nLin++
+
+        If cMesmoDia == (cAliasSE1)->(E1_VENCREA)
+
+            Do Case
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCart //Conta Contábil Cartão
+                    oExcel:Pos(nLin,4):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,5):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContBrok //Conta Contábil Broker
+                    oExcel:Pos(nLin,8):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,9):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,10):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContPIX //Conta Contábil PIX
+                    oExcel:Pos(nLin,12):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,13):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,14):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCash //Conta Contábil Cash
+                    oExcel:Pos(nLin,16):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,17):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,18):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                 
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContMult //Conta Contábil Multas
+                    oExcel:Pos(nLin,20):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,21):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,22):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContAPP //Conta Contábil APP
+                    oExcel:Pos(nLin,24):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,25):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,26):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case !( Alltrim((cAliasSE1)->(E1_CREDIT)) $(cContCart+"/"+cContBrok+"/"+cContPIX+"/"+cContCash+"/"+cContMult+"/"+cContAPP) ) //OUTROS RECEBIMENTOS
+                    oExcel:Pos(nLin,28):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,29):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,30):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+            EndCase
+
+        Else 
+        
+            cMesmoDia := (cAliasSE1)->(E1_VENCREA)
+            Do Case
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCart //Conta Contábil Cartão
+                    oExcel:Pos(nLin,4):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,5):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContBrok //Conta Contábil Broker
+                    oExcel:Pos(nLin,8):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,9):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,10):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContPIX //Conta Contábil PIX
+                    oExcel:Pos(nLin,12):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,13):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,14):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCash //Conta Contábil Cash
+                    oExcel:Pos(nLin,16):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,17):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,18):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                 
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContMult //Conta Contábil Multas
+                    oExcel:Pos(nLin,20):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,21):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,22):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContAPP //Conta Contábil APP
+                    oExcel:Pos(nLin,24):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,25):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,26):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                
+                Case !( Alltrim((cAliasSE1)->(E1_CREDIT)) $(cContCart+"/"+cContBrok+"/"+cContPIX+"/"+cContCash+"/"+cContMult+"/"+cContAPP) ) //OUTROS RECEBIMENTOS
+                    oExcel:Pos(nLin,28):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,29):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+                    oExcel:Pos(nLin,30):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+            EndCase
+
+        EndIF 
+
+        (cAliasSE1)->(DBSkip())
+    EndDo
+
+Return
+
+/*/{Protheus.doc} PlanPagar
+Preenche a planilha de Contas a Pagar
+@type function
+@return return_type, return_description
+/*/
+Static Function PlanPagar
+
+    oExcel:ADDPlan("FORNECEDORES")
+    
+    oExcel:AddTamCol(1,1,14)
+    oExcel:AddTamCol(2,2,68)
+    oExcel:AddTamCol(3,3,60)
+    oExcel:AddTamCol(4,4,15)
+    oExcel:AddTamCol(5,5,15)
+    oExcel:AddTamCol(6,6,20)
+
+    nLin := 1
+    oExcel:SetRowH(47)
+    
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+	If File(cDirImg+"imgsupplier.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgsupplier.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,1,1,102,060,"px",)
+	EndIf
+    oExcel:mergeCells(nLin,2,nLin,6) //Mescla as células
+    oExcel:Pos(nLin,2):SetValue("CONTAS A PAGAR"):SetStyle(oFundoCin1)
+
+    nLin++
+    oExcel:SetRowH(15)
+    oExcel:Pos(nLin,2):SetValue("Fornecedor"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,3):SetValue("Referência"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,4):SetValue("Data"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,5):SetValue("Documento"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,6):SetValue("Vl.liquido"):SetStyle(oFundoVerme)
+
+    DBSelectArea((cAliasSE2))
+    (cAliasSE2)->(DbGoTop())
+    While (cAliasSE2)->(!Eof())
+        
+        nLin++
+        
+        oExcel:Pos(nLin,2):SetValue(Alltrim((cAliasSE2)->(A2_NOME))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,3):SetValue(Alltrim((cAliasSE2)->(E2_HIST))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,4):SetValue(DToC(SToD((cAliasSE2)->(E2_VENCREA)))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,5):SetValue(Alltrim((cAliasSE2)->(E2_NUM))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar((cAliasSE2)->(VALOR), cPictVal, .F.)):SetStyle(oEstCNVer)  
+        
+        (cAliasSE2)->(DBSkip())
+    EndDo
+
+Return
+
+/*/{Protheus.doc} PlanOutros
+Preenche a planilha Outros
+@type function
+@return return_type, return_description
+/*/
+Static Function PlanOutros
+
+    oExcel:ADDPlan("OUTROS DÉBITOS")
+
+    oExcel:AddTamCol(1,1,14)
+    oExcel:AddTamCol(2,2,12)
+    oExcel:AddTamCol(3,3,55)
+    oExcel:AddTamCol(4,4,20)
+    
+    nLin := 1
+    oExcel:SetRowH(47)
+    
+    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+	If File(cDirImg+"imgdebitos.png")
+		nIDImg := oExcel:ADDImg(cDirImg+"imgdebitos.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
+		oExcel:Img(nIDImg,1,1,102,060,"px",)
+	EndIf
+    oExcel:mergeCells(nLin,2,nLin,4) //Mescla as células
+    oExcel:Pos(nLin,2):SetValue("OUTROS DÉBITOS"):SetStyle(oFundoCin1)
+
+    nLin++
+    oExcel:SetRowH(15)
+    oExcel:Pos(nLin,2):SetValue("Data"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,3):SetValue("Outros Débitos"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,4):SetValue("Valor"):SetStyle(oFundoVerme)
+
+    IF Select(cAliasSE5) <> 0
+        DBSelectArea((cAliasSE5))
+        (cAliasSE5)->(DbGoTop())
+        While (cAliasSE5)->(!Eof())
+            
+            nLin++
+            
+            oExcel:Pos(nLin,2):SetValue(DToC(SToD((cAliasSE5)->(E5_DATA)))):SetStyle(oEstCNVer)
+            oExcel:Pos(nLin,3):SetValue(Alltrim((cAliasSE5)->(A6_NOME))):SetStyle(oEstCNVer)
+            oExcel:Pos(nLin,4):SetValue("R$ " + AllToChar((cAliasSE5)->(VALOR), cPictVal, .F.)):SetStyle(oEstCNVer)
+            
+            (cAliasSE5)->(DBSkip())
+        EndDo
+    EndIF
+
+Return
