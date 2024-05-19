@@ -6,7 +6,7 @@
     Valida se o título já existe na SE2 para o mesmo fornecedor
 @type function
 @author Elvis Siqueira
-@since 08/05/2024
+@since 18/05/2024
 /*/
 User Function VALTITSE2()
     Local _cAlias := GetNextAlias()
