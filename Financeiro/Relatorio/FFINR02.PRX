@@ -9,7 +9,7 @@
 FUNÇÃO FFINR02 - Resumo de Fluxo de Caixa FOCO
 @OWNER Foco Aluguel
 @VERSION PROTHEUS 12
-@SINCE 08/05/2024
+@SINCE 18/05/2024
 /*/
 //----------------------------------------------------------------------
 
@@ -354,7 +354,7 @@ Static Function PlanFluxo
     nColuna := 3
 
     For nY := 1 To Len(aDays)
-        oExcel:Pos(nLin,nColuna):SetValue(0,"=SOMA(C5:C11)"):SetStyle(oFmtNumNCin)
+        oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("REC",nColuna)):SetStyle(oFundoCin2)
         nColuna++
     Next            
 
@@ -398,11 +398,24 @@ Static Function PlanFluxo
 	EndIf
     oExcel:Pos(nLin,2):SetValue("TOTAL CONTAS A PAGAR"):SetStyle(oFundoCin2)
     
-    nColuna := 3
-    
     For nY := 1 To Len(aDays)
-        oExcel:Pos(nLin,nColuna):SetValue(0):SetStyle(oFmtNumNCin)
-        nColuna++
+
+        nColuna := (nY+2)
+        nValor := 0
+        
+        DBSelectArea((cAliasSE2))
+        (cAliasSE2)->(DbGoTop())
+        While (cAliasSE2)->(!Eof())
+
+            If aDays[nY] == SToD((cAliasSE2)->(E2_VENCREA))
+                nValor += (cAliasSE2)->(VALOR)
+            Else 
+                oExcel:Pos(nLin,nColuna):SetValue(nValor):SetStyle(oFmtNum)
+            EndIF 
+
+            (cAliasSE2)->(DBSkip())
+        EndDo
+
     Next
 
     nLin++
@@ -450,7 +463,7 @@ Static Function PlanFluxo
     nColuna := 3
     
     For nY := 1 To Len(aDays)
-        oExcel:Pos(nLin,nColuna):SetValue(0,"=SOMA(C12-C14-C15)"):SetStyle(oFmtNumNVer)
+        oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("RES",nColuna)):SetStyle(oFundoVerde)
         nColuna++
     Next
 
@@ -462,8 +475,18 @@ Preenche a planilha de Contas a Receber
 @return return_type, return_description
 /*/
 Static Function PlanReceber
-    Local cMesmoDia := ""
+    Local aCartao   := {}
+    Local aBroker   := {}
+    Local aPIX      := {}
+    Local aCash     := {}
+    Local aMultas   := {}
+    Local aApp      := {}
+    Local aOutros   := {}
+    Local nPosArray := {}
+    Local cAno      := ""
+    Local cMes      := ""
     Local nLin := 0
+    Local nY
 
     oExcel:ADDPlan("RECEBER")
 
@@ -637,91 +660,315 @@ Static Function PlanReceber
     (cAliasSE1)->(DbGoTop())
     While (cAliasSE1)->(!Eof())
 
-        nLin++
+        Do Case 
+            Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContBrok
 
-        If cMesmoDia == (cAliasSE1)->(E1_VENCREA)
+                If Empty(aBroker)
+                    aAdd(aBroker, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
+                Else
+                    nPosArray := AScan(aBroker[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
 
-            Do Case
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCart //Conta Contábil Cartão
-                    oExcel:Pos(nLin,4):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,5):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContBrok //Conta Contábil Broker
-                    oExcel:Pos(nLin,8):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,9):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,10):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                    If nPosArray > 0
+                        aBroker[nPosArray,2] += (cAliasSE1)->VALOR
+                    Else
+                        aAdd(aBroker, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )
+                    EndIF
+                EndIF  
 
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContPIX //Conta Contábil PIX
-                    oExcel:Pos(nLin,12):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,13):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,14):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCash //Conta Contábil Cash
-                    oExcel:Pos(nLin,16):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,17):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,18):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                 
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContMult //Conta Contábil Multas
-                    oExcel:Pos(nLin,20):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,21):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,22):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContAPP //Conta Contábil APP
-                    oExcel:Pos(nLin,24):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,25):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,26):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case !( Alltrim((cAliasSE1)->(E1_CREDIT)) $(cContCart+"/"+cContBrok+"/"+cContPIX+"/"+cContCash+"/"+cContMult+"/"+cContAPP) ) //OUTROS RECEBIMENTOS
-                    oExcel:Pos(nLin,28):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,29):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,30):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-            EndCase
+            Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContPIX
 
-        Else 
-        
-            cMesmoDia := (cAliasSE1)->(E1_VENCREA)
-            Do Case
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCart //Conta Contábil Cartão
-                    oExcel:Pos(nLin,4):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,5):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContBrok //Conta Contábil Broker
-                    oExcel:Pos(nLin,8):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,9):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,10):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
+                If Empty(aPIX)
+                    aAdd(aPIX, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
+                Else
+                    nPosArray := AScan(aPIX[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
 
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContPIX //Conta Contábil PIX
-                    oExcel:Pos(nLin,12):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,13):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,14):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCash //Conta Contábil Cash
-                    oExcel:Pos(nLin,16):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,17):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,18):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                 
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContMult //Conta Contábil Multas
-                    oExcel:Pos(nLin,20):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,21):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,22):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContAPP //Conta Contábil APP
-                    oExcel:Pos(nLin,24):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,25):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,26):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-                
-                Case !( Alltrim((cAliasSE1)->(E1_CREDIT)) $(cContCart+"/"+cContBrok+"/"+cContPIX+"/"+cContCash+"/"+cContMult+"/"+cContAPP) ) //OUTROS RECEBIMENTOS
-                    oExcel:Pos(nLin,28):SetValue(StrZero(Val(SubSTR((cAliasSE1)->(E1_VENCREA),7)),2)+"/"+SubSTR(MesExtenso(Val(SubSTR((cAliasSE1)->(E1_VENCREA),5,2))),1,3)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,29):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
-                    oExcel:Pos(nLin,30):SetValue("R$ " + AllToChar((cAliasSE1)->(VALOR), cPictVal, .F.)):SetStyle(oEstBVer)
-            EndCase
+                    If nPosArray > 0
+                        aPIX[nPosArray,2] += (cAliasSE1)->VALOR
+                    Else
+                        aAdd(aPIX, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )
+                    EndIF
+                EndIF 
 
-        EndIF 
+            Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContCash
+ 
+                If Empty(aCash)
+                    aAdd(aCash, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
+                Else
+                    nPosArray := AScan(aCash[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+
+                    If nPosArray > 0
+                        aCash[nPosArray,2] += (cAliasSE1)->VALOR
+                    Else
+                        aAdd(aCash, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )
+                    EndIF
+                EndIF   
+
+            Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContMult 
+
+                If Empty(aMultas)
+                    aAdd(aMultas, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
+                Else
+                    nPosArray := AScan(aMultas[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+
+                    If nPosArray > 0
+                        aMultas[nPosArray,2] += (cAliasSE1)->VALOR
+                    Else
+                        aAdd(aMultas, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )
+                    EndIF
+                EndIF 
+
+            Case Alltrim((cAliasSE1)->(E1_CREDIT)) == cContAPP
+
+                If Empty(aApp)
+                    aAdd(aApp, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
+                Else
+                    nPosArray := AScan(aApp, {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+
+                    If nPosArray > 0
+                        aApp[nPosArray,2] += (cAliasSE1)->VALOR
+                    Else
+                        aAdd(aApp, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )
+                    EndIF
+                EndIF 
+
+        EndCase        
 
         (cAliasSE1)->(DBSkip())
     EndDo
+
+    IF Select(cAliasSE5) <> 0
+        DBSelectArea((cAliasSE5))
+        (cAliasSE5)->(DbGoTop())
+        While (cAliasSE5)->(!Eof())
+
+            Do Case 
+                Case Alltrim((cAliasSE5)->(E5_NATUREZ)) == cContCart
+
+                    If Empty(aCartao)
+                        aAdd(aCartao, { (cAliasSE5)->(E5_DATA), (cAliasSE5)->VALOR } )                
+                    Else
+                        nPosArray := AScan(aCartao, {|x| AllTrim(x[1]) == (cAliasSE5)->(E5_DATA)})
+
+                        If nPosArray > 0
+                            aCartao[nPosArray,2] += (cAliasSE5)->VALOR
+                        Else
+                            aAdd(aCartao, { (cAliasSE5)->(E5_DATA), (cAliasSE5)->VALOR } )
+                        EndIF
+                    EndIF 
+                
+                Case !( Alltrim((cAliasSE5)->(E5_CREDITO)) $(cContBrok+"/"+cContPIX+"/"+cContCash+"/"+cContMult+"/"+cContAPP) )
+
+                    If Empty(aOutros)
+                        aAdd(aOutros, { (cAliasSE5)->(E5_DATA), (cAliasSE5)->VALOR } )                
+                    Else
+                        nPosArray := AScan(aOutros, {|x| AllTrim(x[1]) == (cAliasSE5)->(E5_DATA)})
+
+                        If nPosArray > 0
+                            aOutros[nPosArray,2] += (cAliasSE5)->VALOR
+                        Else
+                            aAdd(aOutros, { (cAliasSE5)->(E5_DATA), (cAliasSE5)->VALOR } )
+                        EndIF
+                    EndIF 
+            EndCase
+
+            (cAliasSE5)->(DBSkip())
+        EndDo
+    EndIF 
+
+    nLin++
+
+    DBSelectArea("SZ4")
+
+    For nY := 1 To Len(aDays)
+
+        cAno := SubSTR(DToS(aDays[nY]),1,4)
+        cMes := SubSTR(DToS(aDays[nY]),5,2)
+        
+        // -----------------------------------------------------------------------------------------------------------------
+        // Cartão de Crédito
+        
+        oExcel:Pos(nLin,4):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad(cContCart,FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad("",FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,5):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,5):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aCartao)
+            nPosArray := AScan(aCartao, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF 
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar(aCartao[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------------------------------
+        // Broker
+        
+        oExcel:Pos(nLin,8):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad("",FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad(cContBrok,FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,9):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,9):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aBroker)
+            nPosArray := AScan(aBroker, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF             
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,10):SetValue("R$ " + AllToChar(aBroker[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,10):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------------------------------
+        // PIX
+        
+        oExcel:Pos(nLin,12):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad("",FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad(cContPIX,FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,13):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,13):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aPIX)
+            nPosArray := AScan(aPIX, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,14):SetValue("R$ " + AllToChar(aPIX[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,14):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------------------------------
+        // Cash
+        
+        oExcel:Pos(nLin,16):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad("",FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad(cContCash,FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,17):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,17):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aCash)
+            nPosArray := AScan(aCash, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,18):SetValue("R$ " + AllToChar(aCash[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,18):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------------------------------
+        // Multas
+        
+        oExcel:Pos(nLin,20):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad("",FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad(cContMult,FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,21):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,21):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aMultas)
+            nPosArray := AScan(aMultas, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,22):SetValue("R$ " + AllToChar(aMultas[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,22):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------------------------------
+        // APP
+        
+        oExcel:Pos(nLin,24):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad("",FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad(cContAPP,FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,25):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,25):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aApp)
+            nPosArray := AScan(aApp, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,26):SetValue("R$ " + AllToChar(aApp[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,26):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------------------------------
+        // OUTROS RECEBIMENTOS
+        
+        oExcel:Pos(nLin,28):SetValue(DToC(aDays[nY])):SetStyle(oEstBVer)
+
+        If SZ4->(MsSeek(xFilial('SZ4')+ cAno + cMes + ;
+                         Pad("",FWTamSX3("Z4_NATUREZ")[1]) + ;
+                         Pad("",FWTamSX3("Z4_DEBITO")[1]) +;
+                         Pad(cContAPP,FWTamSX3("Z4_CREDITO")[1]) +;
+                         DToS(aDays[nY]) ))
+            oExcel:Pos(nLin,29):SetValue("R$ " + AllToChar(SZ4->Z4_VALOR, cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,29):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIf     
+        If !Empty(aOutros)
+            nPosArray := AScan(aOutros, {|x| AllTrim(x[1]) == DToS(aDays[nY]) })
+        Else 
+            nPosArray := 0
+        EndIF
+        IF  nPosArray > 0
+            oExcel:Pos(nLin,30):SetValue("R$ " + AllToChar(aOutros[nPosArray,2], cPictVal, .F.)):SetStyle(oEstBVer)
+        Else
+            oExcel:Pos(nLin,30):SetValue("R$ " + AllToChar(0, cPictVal, .F.)):SetStyle(oEstBVer)
+        EndIF
+        // -----------------------------------------------------------------------------------------------------------------
+
+        nLin++
+
+    Next 
 
 Return
 
@@ -824,3 +1071,50 @@ Static Function PlanOutros
     EndIF
 
 Return
+
+/*/{Protheus.doc} fnRetCol
+Retorna a coluna em letra para a SOMA das linhas
+@type function
+@return cSoma
+/*/
+Static Function fnRetCol(cTipo,nColuna)
+    Local cSoma := ""
+    Local nPosArray := 0
+    Local aLetras := {}
+                    
+    aAdd(aLetras, {"1" ,"A"})
+    aAdd(aLetras, {"2" ,"B"})
+    aAdd(aLetras, {"3" ,"C"})
+    aAdd(aLetras, {"4" ,"D"})
+    aAdd(aLetras, {"5" ,"E"})
+    aAdd(aLetras, {"6" ,"F"})
+    aAdd(aLetras, {"7" ,"G"})
+    aAdd(aLetras, {"8" ,"H"})
+    aAdd(aLetras, {"9" ,"I"})
+    aAdd(aLetras, {"10","J"})
+    aAdd(aLetras, {"11","K"})
+    aAdd(aLetras, {"12","L"})
+    aAdd(aLetras, {"13","M"})
+    aAdd(aLetras, {"14","N"})
+    aAdd(aLetras, {"15","O"})
+    aAdd(aLetras, {"16","P"})
+    aAdd(aLetras, {"17","Q"})
+    aAdd(aLetras, {"18","R"})
+    aAdd(aLetras, {"19","S"})
+    aAdd(aLetras, {"20","T"})
+    aAdd(aLetras, {"21","U"})
+    aAdd(aLetras, {"22","V"})
+    aAdd(aLetras, {"23","W"})
+    aAdd(aLetras, {"24","X"})
+    aAdd(aLetras, {"25","Y"})
+    aAdd(aLetras, {"26","Z"})
+    
+    nPosArray := AScan(aLetras, {|x| Alltrim(x[1]) == cValToChar(nColuna)})
+    
+    If nPosArray > 0 .And. cTipo == "REC"
+        cSoma := "=SOMA("+aLetras[nPosArray,2]+"5:"+aLetras[nPosArray,2]+"11)"
+    ElseIf nPosArray > 0 .And. cTipo == "RES"
+        cSoma := "=SOMA("+aLetras[nPosArray,2]+"12-"+aLetras[nPosArray,2]+"14-"+aLetras[nPosArray,2]+"15)"
+    EndIF 
+
+Return (cSoma)
