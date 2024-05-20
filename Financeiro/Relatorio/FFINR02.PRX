@@ -666,7 +666,7 @@ Static Function PlanReceber
                 If Empty(aBroker)
                     aAdd(aBroker, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
                 Else
-                    nPosArray := AScan(aBroker[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+                    nPosArray := AScan(aBroker, {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
 
                     If nPosArray > 0
                         aBroker[nPosArray,2] += (cAliasSE1)->VALOR
@@ -680,7 +680,7 @@ Static Function PlanReceber
                 If Empty(aPIX)
                     aAdd(aPIX, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
                 Else
-                    nPosArray := AScan(aPIX[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+                    nPosArray := AScan(aPIX, {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
 
                     If nPosArray > 0
                         aPIX[nPosArray,2] += (cAliasSE1)->VALOR
@@ -694,7 +694,7 @@ Static Function PlanReceber
                 If Empty(aCash)
                     aAdd(aCash, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
                 Else
-                    nPosArray := AScan(aCash[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+                    nPosArray := AScan(aCash, {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
 
                     If nPosArray > 0
                         aCash[nPosArray,2] += (cAliasSE1)->VALOR
@@ -708,7 +708,7 @@ Static Function PlanReceber
                 If Empty(aMultas)
                     aAdd(aMultas, { (cAliasSE1)->(E1_VENCREA), (cAliasSE1)->VALOR } )                
                 Else
-                    nPosArray := AScan(aMultas[1], {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
+                    nPosArray := AScan(aMultas, {|x| AllTrim(x[1]) == (cAliasSE1)->(E1_VENCREA)})
 
                     If nPosArray > 0
                         aMultas[nPosArray,2] += (cAliasSE1)->VALOR
