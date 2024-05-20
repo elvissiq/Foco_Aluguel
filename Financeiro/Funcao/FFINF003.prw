@@ -146,7 +146,7 @@ Static Function fnGeraGrid()
 
     oModelGrid:GoLine(1)
     oView:Refresh("VIEW_GRID")
-    oView:SetNoDeleteLine('VIEW_GRID')
-    oView:SetNoInsertLine('VIEW_GRID')
+    //oView:SetNoDeleteLine('VIEW_GRID')
+    //oView:SetNoInsertLine('VIEW_GRID')
 
 Return (cMesRet)
