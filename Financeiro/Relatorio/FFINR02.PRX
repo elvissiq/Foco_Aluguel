@@ -356,7 +356,7 @@ Static Function PlanFluxo
     For nY := 1 To Len(aDays)
         oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("REC",nColuna)):SetStyle(oFundoCin2)
         nColuna++
-    Next            
+    Next
 
     nLin++
 
