@@ -9,7 +9,7 @@
 FUNÇÃO FFINR02 - Resumo de Fluxo de Caixa FOCO
 @OWNER Foco Aluguel
 @VERSION PROTHEUS 12
-@SINCE 18/05/2024
+@SINCE 10/06/2024
 /*/
 //----------------------------------------------------------------------
 
@@ -354,7 +354,7 @@ Static Function PlanFluxo
     nColuna := 3
 
     For nY := 1 To Len(aDays)
-        oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("REC",nColuna)):SetStyle(oFundoCin2)
+        oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("REC",nColuna)):SetStyle(oFmtNumNCin)
         nColuna++
     Next
 
@@ -463,7 +463,7 @@ Static Function PlanFluxo
     nColuna := 3
     
     For nY := 1 To Len(aDays)
-        oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("RES",nColuna)):SetStyle(oFundoVerde)
+        oExcel:Pos(nLin,nColuna):SetValue(0,fnRetCol("RES",nColuna)):SetStyle(oFmtNumNVer)
         nColuna++
     Next
 
@@ -991,7 +991,7 @@ Static Function PlanPagar
     nLin := 1
     oExcel:SetRowH(47)
     
-    oExcel:Pos(nLin,1):SetValue(""):SetStyle(oEstCNVer)
+    oExcel:Pos(nLin,1,3):SetValue(""):SetStyle(oEstCNVer)
 	If File(cDirImg+"imgsupplier.png")
 		nIDImg := oExcel:ADDImg(cDirImg+"imgsupplier.png")	//Imagem no diretório \dirdoc\relfluxo\ da Protheus_data
 		oExcel:Img(nIDImg,1,1,102,060,"px",)
@@ -1001,11 +1001,11 @@ Static Function PlanPagar
 
     nLin++
     oExcel:SetRowH(15)
-    oExcel:Pos(nLin,2):SetValue("Fornecedor"):SetStyle(oFundoVerme)
-    oExcel:Pos(nLin,3):SetValue("Referência"):SetStyle(oFundoVerme)
-    oExcel:Pos(nLin,4):SetValue("Data"):SetStyle(oFundoVerme)
-    oExcel:Pos(nLin,5):SetValue("Documento"):SetStyle(oFundoVerme)
-    oExcel:Pos(nLin,6):SetValue("Vl.liquido"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,2,3):SetValue("Fornecedor"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,3,3):SetValue("Referência"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,4,3):SetValue("Data"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,5,3):SetValue("Documento"):SetStyle(oFundoVerme)
+    oExcel:Pos(nLin,6,3):SetValue("Vl.liquido"):SetStyle(oFundoVerme)
 
     DBSelectArea((cAliasSE2))
     (cAliasSE2)->(DbGoTop())
@@ -1013,11 +1013,11 @@ Static Function PlanPagar
         
         nLin++
         
-        oExcel:Pos(nLin,2):SetValue(Alltrim((cAliasSE2)->(A2_NOME))):SetStyle(oEstCNVer)
-        oExcel:Pos(nLin,3):SetValue(Alltrim((cAliasSE2)->(E2_HIST))):SetStyle(oEstCNVer)
-        oExcel:Pos(nLin,4):SetValue(DToC(SToD((cAliasSE2)->(E2_VENCREA)))):SetStyle(oEstCNVer)
-        oExcel:Pos(nLin,5):SetValue(Alltrim((cAliasSE2)->(E2_NUM))):SetStyle(oEstCNVer)
-        oExcel:Pos(nLin,6):SetValue("R$ " + AllToChar((cAliasSE2)->(VALOR), cPictVal, .F.)):SetStyle(oEstCNVer)  
+        oExcel:Pos(nLin,2,3):SetValue(Alltrim((cAliasSE2)->(A2_NOME))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,3,3):SetValue(Alltrim((cAliasSE2)->(E2_HIST))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,4,3):SetValue(DToC(SToD((cAliasSE2)->(E2_VENCREA)))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,5,3):SetValue(Alltrim((cAliasSE2)->(E2_NUM))):SetStyle(oEstCNVer)
+        oExcel:Pos(nLin,6,3):SetValue("R$ " + AllToChar((cAliasSE2)->(VALOR), cPictVal, .F.)):SetStyle(oEstCNVer)  
         
         (cAliasSE2)->(DBSkip())
     EndDo
@@ -1108,13 +1108,22 @@ Static Function fnRetCol(cTipo,nColuna)
     aAdd(aLetras, {"24","X"})
     aAdd(aLetras, {"25","Y"})
     aAdd(aLetras, {"26","Z"})
+    aAdd(aLetras, {"27","AA"})
+    aAdd(aLetras, {"28","AB"})
+    aAdd(aLetras, {"29","AC"})
+    aAdd(aLetras, {"30","AD"})
+    aAdd(aLetras, {"31","AE"})
+    aAdd(aLetras, {"32","AF"})
+    aAdd(aLetras, {"33","AG"})
+    aAdd(aLetras, {"34","AH"})
+    aAdd(aLetras, {"35","AI"})
     
     nPosArray := AScan(aLetras, {|x| Alltrim(x[1]) == cValToChar(nColuna)})
     
     If nPosArray > 0 .And. cTipo == "REC"
-        cSoma := "=SOMA("+aLetras[nPosArray,2]+"5:"+aLetras[nPosArray,2]+"11)"
+        cSoma := "SUM("+aLetras[nPosArray,2]+"5:"+aLetras[nPosArray,2]+"11)"
     ElseIf nPosArray > 0 .And. cTipo == "RES"
-        cSoma := "=SOMA("+aLetras[nPosArray,2]+"12-"+aLetras[nPosArray,2]+"14-"+aLetras[nPosArray,2]+"15)"
+        cSoma := "="+aLetras[nPosArray,2]+"12-"+aLetras[nPosArray,2]+"14-"+aLetras[nPosArray,2]+"15"
     EndIF 
 
 Return (cSoma)
