@@ -55,7 +55,7 @@ Static Function xProcessa()
     Local oExcel
     Local aTamLin
     Local nContP,nContL
-    Local cArq 
+    Local cArq, cPrefixo, cParcela 
 
     cArq := tFileDialog( "Arquivo de planilha Excel (*.xlsx) | Todos tipos (*.*)",,,, .F., /*GETF_MULTISELECT*/)
     oExcel	:= YExcel():new(,cArq)
@@ -92,10 +92,14 @@ Static Function xProcessa()
                         EndIF
 
                     ElseIf cTabela $('SE1/SE2')
+                        
+                        cPrefixo := IIF(oExcel:GetValue(nContL,2) == 0, "", oExcel:GetValue(nContL,2))
+                        cParcela := IIF(oExcel:GetValue(nContL,4) == 0, "", oExcel:GetValue(nContL,4))
+
                         IF &(cTabela)->(MsSeek(Pad(oExcel:GetValue(nContL,1),TamSX3(SubSTR(cTabela,2)+"_FILIAL")[1])+;
-                                        Pad(oExcel:GetValue(nContL,2),TamSX3(SubSTR(cTabela,2)+"_PREFIXO")[1])+;
+                                        Pad(cPrefixo,TamSX3(SubSTR(cTabela,2)+"_PREFIXO")[1])+;
                                         Pad(oExcel:GetValue(nContL,3),TamSX3(SubSTR(cTabela,2)+"_NUM")[1])+;
-                                        Pad(oExcel:GetValue(nContL,4),TamSX3(SubSTR(cTabela,2)+"_PARCELA")[1])+;
+                                        Pad(cParcela,TamSX3(SubSTR(cTabela,2)+"_PARCELA")[1])+;
                                         Pad(oExcel:GetValue(nContL,5),TamSX3(SubSTR(cTabela,2)+"_TIPO")[1])))
                             
                             RecLock(cTabela,.F.)
