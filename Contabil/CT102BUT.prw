@@ -172,7 +172,7 @@ User Function JOBMAR01(_cEmp)
 						{'CT2_CLVLDB' , aReg[nY,12]  						               , NIL},;
 						{'CT2_CLVLCR' , aReg[nY,13]  						               , NIL},;
 						{'CT2_VALOR'  , Val(StrTran(aReg[nY,14], ",", "."))	               , NIL},;
-						{'CT2_ORIGEM' , 'MSEXECAUT' 						               , NIL},;
+						{'CT2_ORIGEM' , cUserName     						               , NIL},;
 						{'CT2_HP'     , aReg[nY,15]   						               , NIL},;
 						{'CT2_HIST'   , aReg[nY,16] 						               , NIL}})
 
