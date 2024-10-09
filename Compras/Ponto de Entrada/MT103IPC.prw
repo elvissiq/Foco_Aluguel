@@ -7,14 +7,16 @@
 |-------------------------------------------------------------------------------------|
 |*************************************************************************************/
 User Function MT103IPC
+	Local aArea     := GetArea()
+    Local nPosCod   := aScan(aHeader,{|x| AllTrim(Upper(x[2]))=="D1_COD" })
+    Local nPosCampo := aScan(aHeader,{|x| AllTrim(Upper(x[2]))=="D1_XDESC" })
+    Local nAtual    := 0
+    
+    //Percorrendo os acols
+    For nAtual := 1 To Len(aCols)
+        aCols[nAtual][nPosCampo] := Posicione('SB1', 1, FWxFilial('SB1')+aCols[nAtual][nPosCod], "B1_DESC")
+    Next
+     
+    RestArea(aArea)
 
-Local _nItem   := PARAMIXB[1]
-Local _nPosCod := AsCan(aHeader,{|x|Alltrim(x[2])=="D1_COD"})
-Local _nPosDes := AsCan(aHeader,{|x|Alltrim(x[2])=="D1_XDESC"})
-Local _cDesc   := Posicione( "SB1", 1, FWxFilial("SB1") + aCols[nItem, nPosProd], "B1_DESC" )
-   
-	If _nPosCod > 0 .And. _nItem > 0
-		aCols[_nItem,_nPosDes] := _cDesc
-	Endif
-
-Return
+Return 

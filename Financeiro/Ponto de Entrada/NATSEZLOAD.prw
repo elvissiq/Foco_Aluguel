@@ -45,6 +45,8 @@ User Function NATSEZLOAD()
                                 Alltrim(oExcel:GetValue(nContL,4)),;      //Conta Contabil
                                 Alltrim(oExcel:GetValue(nContL,5)),;      //Item Contabil
                                 Alltrim(oExcel:GetValue(nContL,6)),;      //Classe Valor
+                                0,;  // PIS CC 
+                                0,;  // COFINS CC
                                 "SZE",;                                   //Alias WT
                                 0,;                                       //Recno WT
                                 .F.})

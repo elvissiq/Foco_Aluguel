@@ -17,7 +17,6 @@ User Function CNTGERSE2
     Local _aArea     := FWGetArea()
 	Local _aAreaSE2  := SE2->(FWGetArea())
     Local cNumContr  := PARAMIXB[1,1,1]
-    Local cVirgencia := ""
     
     DBSelectArea("CN9")
     IF CN9->(MsSeek(FWxFilial("CN9")+cNumContr))
@@ -25,8 +24,6 @@ User Function CNTGERSE2
             SE2->E2_FORMPAG := CN9->CN9_XFORMP
         EndIF 
     EndIF 
-    
-    
     
     //CNF_CONTRA
     //CNF_PARCEL
