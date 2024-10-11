@@ -18,6 +18,8 @@ User Function NATSEZLOAD()
     Local aTamLin := {}
     Local nPercen := 0
     Local nTotVal := 0
+    Local nPPIS   := (GetMV("MV_TXPIS") / 100)
+    Local nPCOF   := (GetMV("MV_TXCOFIN") / 100)
     Local nContP,nContL
     Local cArq 
 
@@ -45,8 +47,8 @@ User Function NATSEZLOAD()
                                 Alltrim(oExcel:GetValue(nContL,4)),;      //Conta Contabil
                                 Alltrim(oExcel:GetValue(nContL,5)),;      //Item Contabil
                                 Alltrim(oExcel:GetValue(nContL,6)),;      //Classe Valor
-                                0,;  // PIS CC 
-                                0,;  // COFINS CC
+                                oExcel:GetValue(nContL,2) * nPPIS,;       // PIS CC 
+                                oExcel:GetValue(nContL,2) * nPCOF,;       // COFINS CC
                                 "SZE",;                                   //Alias WT
                                 0,;                                       //Recno WT
                                 .F.})

@@ -17,8 +17,8 @@ User Function CT105BUT()
     Local _cAlias    := GetNextAlias()
     Local nQtdCC     := 0
     Local nValTit    := SE1->E1_VALOR
-    Local nValPIS    := Round( nValTit * ( SuperGetMV("MV_TXPIS",.F.,1.65) / 100 ), 2 )
-    Local nValCOF    := Round( nValTit * ( SuperGetMV("MV_TXCOFIN",.F.,7.60) / 100 ), 2 )
+    Local nValPIS    := Round( nValTit * ( GetMV("MV_TXPIS") / 100 ), 2 )
+    Local nValCOF    := Round( nValTit * ( GetMV("MV_TXCOFIN") / 100 ), 2 )
     Local nValPISAux := nValPIS
     Local nValCOFAux := nValCOF
     Local nValPISTMP := 0
