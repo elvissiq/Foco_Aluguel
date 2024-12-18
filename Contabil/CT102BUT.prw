@@ -88,7 +88,7 @@ User Function JOBMAR01(_cEmp)
 	Local nQtGrav     := 0
 	Local nPer        := 0
 	Local cMV_ATUSAL  := GetMv("MV_ATUSAL")
-	Local cMV_CONTSB  := GetMv("MV_CONTSB")
+	//Local cMV_CONTSB  := GetMv("MV_CONTSB")
 	Local cMV_CONTBAT := GetMv("MV_CONTBAT")
 	Local cMV_NUMLIN  := GetMv("MV_NUMLIN")
 	Local cTexto	  := ""
@@ -98,7 +98,7 @@ User Function JOBMAR01(_cEmp)
 	Local nY 
 
 	PutMv("MV_ATUSAL","N")
-	PutMv("MV_CONTSB","S")
+	//PutMv("MV_CONTSB","S")
 	PutMv("MV_CONTBAT","S")
 	PutMv("MV_NUMLIN",99999)
 
@@ -214,7 +214,7 @@ User Function JOBMAR01(_cEmp)
 
 	// ---- Retornar os parametros
 	PutMv("MV_ATUSAL",cMV_ATUSAL)
-	PutMv("MV_CONTSB",cMV_CONTSB)
+	//PutMv("MV_CONTSB",cMV_CONTSB)
 	PutMv("MV_CONTBAT",cMV_CONTBAT)
 	PutMv("MV_NUMLIN",cMV_NUMLIN)
 
