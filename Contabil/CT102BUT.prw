@@ -98,7 +98,7 @@ User Function JOBMAR01(_cEmp)
 	Local nY 
 
 	PutMv("MV_ATUSAL","N")
-	//PutMv("MV_CONTSB","S")
+	PutMv("MV_CONTSB","S")
 	PutMv("MV_CONTBAT","S")
 	PutMv("MV_NUMLIN",99999)
 
@@ -215,6 +215,7 @@ User Function JOBMAR01(_cEmp)
 	// ---- Retornar os parametros
 	PutMv("MV_ATUSAL",cMV_ATUSAL)
 	//PutMv("MV_CONTSB",cMV_CONTSB)
+	PutMv("MV_CONTSB","N")
 	PutMv("MV_CONTBAT",cMV_CONTBAT)
 	PutMv("MV_NUMLIN",cMV_NUMLIN)
 
