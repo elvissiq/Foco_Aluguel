@@ -46,7 +46,7 @@ Static Function sfSetCTD(mvModel)
 			CTD->CTD_FILIAL := xFilial("CTD") 
 			CTD->CTD_ITEM	:= "F"+oModelSA2:GetValue('A2_COD')+oModelSA2:GetValue('A2_LOJA')
 			CTD->CTD_CLASSE := "2"
-			CTD->CTD_NORMAL := "1"          
+			CTD->CTD_NORMAL := "0"          
 			CTD->CTD_DESC01 := oModelSA2:GetValue('A2_NOME')
 			CTD->CTD_BLOQ	:= "2"    
 			CTD->CTD_DTEXIS := CTOD("01/01/1980")
